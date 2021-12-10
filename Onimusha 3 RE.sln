@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.31729.503
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OniLauncher", "OniLauncher\OniLauncher.vcxproj", "{09DFA4E2-2EF8-43AA-8176-1117FA85CC1B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OniPatch", "OniPatch\OniPatch.vcxproj", "{99658361-11E4-4E96-9636-5F27174EBDA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{09DFA4E2-2EF8-43AA-8176-1117FA85CC1B}.Release|x64.Build.0 = Release|x64
 		{09DFA4E2-2EF8-43AA-8176-1117FA85CC1B}.Release|x86.ActiveCfg = Release|Win32
 		{09DFA4E2-2EF8-43AA-8176-1117FA85CC1B}.Release|x86.Build.0 = Release|Win32
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Debug|x64.ActiveCfg = Debug|x64
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Debug|x64.Build.0 = Debug|x64
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Debug|x86.ActiveCfg = Debug|Win32
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Debug|x86.Build.0 = Debug|Win32
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Release|x64.ActiveCfg = Release|x64
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Release|x64.Build.0 = Release|x64
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Release|x86.ActiveCfg = Release|Win32
+		{99658361-11E4-4E96-9636-5F27174EBDA2}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
