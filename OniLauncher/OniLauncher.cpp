@@ -2,7 +2,7 @@
 //
 
 /*
- ** This file is part of the Onimusha O3:RE Project !
+ ** This file is part of the Onimusha 3:RE Project !
  **
  ** You should have received a copy of the LICENSE along with this program.
  **
@@ -10,252 +10,60 @@
  ** Contributors (See CONTRIBUTION.md):
  **  AlgoFlash
  **  Rigodron
+ **  Xydion
  */
 
-#include "framework.h"
+#include "pch.h"
 #include "OniLauncher.h"
-
-#define MAX_LOADSTRING 100
-#define SPAWNLP_ERROR -1
 
 // Variables globales :
 HINSTANCE hInst;                                // instance actuelle
-WCHAR szTitle[MAX_LOADSTRING];                  // Texte de la barre de titre
-WCHAR szWindowClass[MAX_LOADSTRING];            // nom de la classe de fenêtre principale
-
-// Variables globales identifiées :
+TCHAR szTitle[MAX_LOADSTRING];                  // Texte de la barre de titre
+TCHAR szWindowClass[MAX_LOADSTRING];            // nom de la classe de fenêtre principale
+D3DDISPLAYMODE ***displaysModes = NULL;
+LPDIRECT3D9 d3d = NULL;
 DWORD hKeyCurrentId;
 HKEY hKey;
-LPSTR lpClass;
 
-// Variables globales a identifier :
-CHAR char_409428[260U];
-DWORD dword_408054;
-
-// Déclarations anticipées des fonctions incluses dans ce module de code :
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-// Déclarations anticipées des fonctions a identifier dans ce module de code :
-BOOL                sub_401450(LPCSTR lpSubKey);
-BOOL                sub_4014F0(LPCSTR regKeyPath, LPBYTE lpDataBuffer, LPDWORD lpcbData);
-
-// Reversed functions
-int                 pseudoWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd);
-int                 checkPrintError(intptr_t processHandle);
-BOOL                isEhshellRunning();
-BOOL                resetGlobalHKEY();
-BOOL                checkRegKeyType(LPCSTR regKeyPath, DWORD regKeyExpectedValue);
-BOOL                setCurrentHKEY(DWORD hKeyId);
-BOOL                getInstallPathRegKey(LPBYTE lpData, LPDWORD lpcbData);
-BOOL                checkRegKeyExist(LPCSTR lpSubKey);
-
-BOOL checkRegKeyExist(LPCSTR lpSubKey) // NAWAK
+int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PTSTR pCmdLine, _In_ int nCmdShow)
 {
-	signed int i = 0;
-	CHAR i_shift;
-	size_t subKeyLen;
-	signed int j = 0;
-	LPDWORD v6;
-	char v7;
-	unsigned int lpSubKeyLength;
-	char* v9;
-	int k = 0;
-	char k_shift;
-	HKEY hKey;
-	HKEY phkResult = 0;
-	unsigned int subKeyLength; 
-	DWORD dwDisposition;
-	CHAR SubKey[256]; 
-	__int16 v19 = 0; 
-	char v20 = 0; 
+    MSG msg;
+    HACCEL hAccelTable;
 
-	memset(SubKey, 0, sizeof(SubKey));
+    UNREFERENCED_PARAMETER(hPrevInstance);
+    UNREFERENCED_PARAMETER(pCmdLine);
 
-	switch (hKeyCurrentId)
-	{
-	case 1:
-		hKey = HKEY_CLASSES_ROOT;
-		goto LABEL_8;
-	case 2:
-		hKey = HKEY_CURRENT_USER;
-		goto LABEL_8;
-	case 3:
-		hKey = HKEY_LOCAL_MACHINE;
-		goto LABEL_8;
-	case 4:
-		hKey = HKEY_USERS;
-	LABEL_8:
-		if (!strcmp(lpSubKey, ".."))
-		{
-			subKeyLen = strlen(SubKey);
-			if (!subKeyLen)
-				return 0;
+    initD3D();
+    initDisplaysModes();
 
-			for (j = subKeyLen - 1; j >= 0; --j)
-				if (SubKey[j] == '\\')
-					break;
+    // Initialise les chaînes globales
+    LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+    LoadString(hInstance, IDC_ONILAUNCHER, szWindowClass, MAX_LOADSTRING);
 
-			if (j == -1)
-			{
-				setCurrentHKEY(hKeyCurrentId);
-				return 1;
-			}
-			SubKey[j] = 0;
-			subKeyLength = strlen(SubKey);
-			if (!subKeyLength)
-				return 0;
-		}
-		else
-		{
-			if (!sub_401450(lpSubKey))
-				return 0;
-			subKeyLength = strlen(SubKey);
-			if (subKeyLength && (dwDisposition + subKeyLength + 3) != '\\') // FIXME
-			{
-				//v6 = dwDisposition + 3;// FIXME
-				do
-				{
-					v7 = v6 + 1; // FIXME
-					v6++; // FIXME
-				} while (v7);
-				*v6 = '\\';
-			}
-			lpSubKeyLength = strlen(lpSubKey) + 1;
-			v9 = (char*)&dwDisposition + 3;
+    // Insription de la classe de fenêtre
+    if (!MyRegisterClass(hInstance))
+        return FALSE;
 
-			while (*++v9);
+    // Effectue l'initialisation de l'application :
+    if (!InitInstance(hInstance, nCmdShow))
+        return FALSE;
 
-			memcpy(v9, lpSubKey, lpSubKeyLength);
-		}
+    hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ONILAUNCHER));
 
-		if (RegCreateKeyExA(hKey, SubKey, 0, lpClass, 0, KEY_READ | KEY_WRITE, 0, &phkResult, &dwDisposition))
-			return 0;
+    // Boucle de messages principale :
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
 
-		resetGlobalHKEY();
-		::hKey = phkResult;
+    destroyDisplaysModes();
+    destroyD3D();
 
-		do
-		{
-			k_shift = SubKey[k];
-			char_409428[k++] = k_shift;
-		} while (k_shift);
-
-		return 1;
-	default:
-		return 0;
-	}
-}
-
-int pseudoWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
-{
-	BOOL ehshellWasRunning = FALSE;  // TRUE if Windows Media Center Shell is running.
-	HWND wmcHandler;                 // Windows Media Center window handler.
-	int oni3GameHandler;             // Onimusha 3 oni3.exe process handler.
-	int bufferErrorCode;             // Unknown process handler.
-	CHAR oni3GameExePath[256];       // Store oni3.exe executable path.
-	CHAR windirPath[256];
-	OFSTRUCT ReOpenBuff[128];
-	CHAR unknVar1[256];
-	DWORD unknVar2[256];
-
-	GetEnvironmentVariableA("windir", windirPath, sizeof(windirPath));
-
-	strcpy_s(unknVar1, R"(\ehome\ehshell.exe)");
-	getInstallPathRegKey((LPBYTE)oni3GameExePath, unknVar2);
-
-	strcpy_s(oni3GameExePath, R"(\oni3.exe)");
-	if (OpenFile(oni3GameExePath, ReOpenBuff, OF_EXIST) == HFILE_ERROR)
-		MessageBoxA(0, "Cannot Find the Game", 0, 0);
-	else
-	{
-		// Close the Windows Media Center if running (Windows XP)
-		if (isEhshellRunning())
-		{
-			wmcHandler = FindWindowA(0, "Media Center");
-			if (CloseWindow(wmcHandler)) {
-				ehshellWasRunning = TRUE;
-				Sleep(200U);
-			}
-		}
-		// Executing Onimusha 3
-		oni3GameHandler = _spawnlp(_P_WAIT, oni3GameExePath, oni3GameExePath, "-fullscreen", NULL);
-		checkPrintError(oni3GameHandler);
-
-		if (ehshellWasRunning)
-		{
-			bufferErrorCode = _spawnlp(_P_NOWAIT, windirPath, windirPath, NULL);
-			checkPrintError(bufferErrorCode);
-		}
-	}
-	return 0;
-}
-
-BOOL sub_401450(LPCSTR lpSubKey)
-{
-	HKEY phkResult = 0;
-
-	if (!hKey || !lpSubKey || RegOpenKeyExA(hKey, lpSubKey, 0, 0x2001Fu, &phkResult))
-		return FALSE;
-	RegCloseKey(phkResult);
-	return TRUE;
-}
-
-BOOL sub_4014F0(LPCSTR regKeyPath, LPBYTE lpDataBuffer, LPDWORD lpcbData)
-{
-	if (hKey && regKeyPath && lpDataBuffer && checkRegKeyType(regKeyPath, 1))
-		return RegQueryValueExA(hKey, regKeyPath, 0, 0, lpDataBuffer, lpcbData) == 0;
-	return FALSE;
-}
-
-BOOL getInstallPathRegKey(LPBYTE lpData, LPDWORD lpcbData)
-{
-	BOOL result;
-
-	if (!setCurrentHKEY(3) || !checkRegKeyExist	(R"(SOFTWARE\CAPCOM\ONIMUSHA3 PC\1.00.000)"))
-		return -1;
-	result = sub_4014F0("InstallPath", lpData, lpcbData);
-	setCurrentHKEY(0);
-
-	return result;
-}
-
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
-{
-	MSG msg;
-	HACCEL hAccelTable;
-
-	UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpCmdLine);
-
-	// TODO: Placez le code ici.
-
-	// Initialise les chaînes globales
-	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-	LoadStringW(hInstance, IDC_ONILAUNCHER, szWindowClass, MAX_LOADSTRING);
-	MyRegisterClass(hInstance);
-
-	// Effectue l'initialisation de l'application :
-	if (!InitInstance(hInstance, nCmdShow))
-	{
-		return FALSE;
-	}
-
-	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ONILAUNCHER));
-
-	// Boucle de messages principale :
-	while (GetMessage(&msg, nullptr, 0, 0))
-	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-	}
-
-	return (int)msg.wParam;
+    return (int) msg.wParam;
 }
 
 //
@@ -263,25 +71,30 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 //
 //  OBJECTIF : Inscrit la classe de fenêtre.
 //
-ATOM MyRegisterClass(HINSTANCE hInstance)
+BOOL MyRegisterClass(HINSTANCE hInstance)
 {
-	WNDCLASSEXW wcex;
+    WNDCLASSEX wcex;
 
-	wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.style = 0;
+    wcex.lpfnWndProc = WndProc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ONILAUNCHER));
+    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = MAKEINTRESOURCE(IDC_ONILAUNCHER);
+    wcex.lpszClassName = szWindowClass;
+    wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-	wcex.style = CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc = WndProc;
-	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = 0;
-	wcex.hInstance = hInstance;
-	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ONILAUNCHER));
-	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_ONILAUNCHER);
-	wcex.lpszClassName = szWindowClass;
-	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    if (!RegisterClassEx(&wcex))
+    {
+        MessageBox(NULL, TEXT("Call to RegisterClassEx failed!"), TEXT("Class Registration Error"), MB_ICONERROR);
+        return FALSE;
+    }
 
-	return RegisterClassExW(&wcex);
+    return TRUE;
 }
 
 //
@@ -296,21 +109,153 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-	HWND hWnd;
+    RECT rect;
+    HWND hWnd;
 
-	hInst = hInstance; // Stocke le handle d'instance dans la variable globale
-	hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+    SecureZeroMemory(&rect, sizeof(RECT));
+    rect.bottom = MAIN_WINDOW_HEIGHT;
+    rect.right = MAIN_WINDOW_WIDTH;
 
-	if (!hWnd)
-	{
-		return FALSE;
-	}
+    ::hInst = hInstance; // Stocke le handle d'instance dans la variable globale
 
-	ShowWindow(hWnd, nCmdShow);
-	UpdateWindow(hWnd);
+    AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, true);
+    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, hInstance, NULL);
 
-	return TRUE;
+    if (!hWnd) {
+        MessageBox(NULL, TEXT("Call to CreateWindow failed!"), TEXT("Error"), MB_ICONERROR);
+        return FALSE;
+    }
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+
+    return TRUE;
+}
+
+void fillMonitorComboBox(HWND monitorComboBox)
+{
+    TCHAR buffer[MAX_SMALL_STRING + 5];
+    TCHAR monitorStr[MAX_SMALL_STRING];
+    LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_SMALL_STRING);
+    
+    for (UINT i = 0; ::displaysModes[i]; i++) {
+        _stprintf_s(buffer, MAX_SMALL_STRING + 5, TEXT("%s %d"), monitorStr, i);
+        SendMessage(monitorComboBox, CB_ADDSTRING, 0, (LPARAM)buffer);
+    }
+}
+
+void fillResolutionComboBox(UINT monitor, HWND resultionComboBox)
+{
+    TCHAR buffer[MAX_SMALL_STRING];
+
+    for (UINT i = 0; ::displaysModes[monitor][i]; i++) {
+        _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%d x %d"), ::displaysModes[monitor][i]->Width, ::displaysModes[monitor][i]->Height);
+        if (i > 0 && ::displaysModes[monitor][i - 1]->Width == ::displaysModes[monitor][i]->Width && ::displaysModes[monitor][i - 1]->Height == ::displaysModes[monitor][i]->Height)
+            continue;
+        SendMessage(resultionComboBox, CB_ADDSTRING, 0, (LPARAM)buffer);
+    }
+}
+
+LRESULT wndProcCreate(HWND hWnd)
+{
+    HWND monitorComboBox = CreateWindow(TEXT("COMBOBOX"), NULL, DROPDOWN_COMBO_BOX, 5, 150, 290, 200, hWnd, (HMENU)ID_MONITOR, hInst, NULL);
+    HWND resolutionComboBox = CreateWindow(TEXT("COMBOBOX"), NULL, DROPDOWN_COMBO_BOX, 5, 200, 180, 200, hWnd, (HMENU)ID_RESOLUTION, hInst, NULL);
+    HWND frequencyComboBox = CreateWindow(TEXT("COMBOBOX"), NULL, DROPDOWN_COMBO_BOX, 190, 200, 105, 200, hWnd, (HMENU)ID_REFRESH_RATE, hInst, NULL);
+    HWND enableDebugCheckBox = CreateWindow(TEXT("BUTTON"), TEXT("Enable debug menu"), DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 395, 290, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
+    HWND saveButton = CreateWindow(TEXT("BUTTON"), TEXT("Save settings"), DEFAULT_STYLE, 5, 420, 290, 30, hWnd, (HMENU)ID_SAVE, hInst, NULL);
+    HWND playButton = CreateWindow(TEXT("BUTTON"), TEXT("Play now"), DEFAULT_STYLE, 5, 455, 290, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
+
+    EnableWindow(resolutionComboBox, false);
+    EnableWindow(frequencyComboBox, false);
+
+    fillMonitorComboBox(monitorComboBox);
+
+    return 0;
+}
+
+LRESULT wndProcCommandSave(HWND hWnd)
+{
+    HWND monitorComboBox = GetDlgItem(hWnd, ID_MONITOR);
+    HWND resolutionComboBox = GetDlgItem(hWnd, ID_RESOLUTION);
+    HWND frequencyComboBox = GetDlgItem(hWnd, ID_REFRESH_RATE);
+    HWND enableDebugCheckBox = GetDlgItem(hWnd, ID_DEBUG);
+    TCHAR lpText[256];
+
+    GetWindowText(monitorComboBox, lpText, 256);
+    MessageBox(hWnd, lpText, TEXT("Info"), MB_ICONINFORMATION);
+
+    return 0;
+}
+
+UINT parseNumber(LPTSTR str)
+{
+    UINT j = 0;
+    UINT result = 0;
+    LPTSTR number = (LPTSTR)calloc(_tcslen(str), sizeof(CHAR));
+
+    if (number == NULL)
+        return -1;
+
+    for (INT i = 0; str[i]; i++) {
+        if (_tisdigit(str[i])) {
+            number[j++] = str[i];
+        }
+    }
+
+    result = _tstoi(number);
+    free(number);
+
+    return result;
+}
+
+LRESULT wndProcCommandMonitor(HWND hWnd, UINT iCode)
+{
+    TCHAR lpText[256];
+    HWND monitorComboBox = NULL;
+    HWND resolutionComboBox = NULL;
+
+    if (iCode == CBN_SELENDOK) {
+        monitorComboBox = GetDlgItem(hWnd, ID_MONITOR);
+        resolutionComboBox = GetDlgItem(hWnd, ID_RESOLUTION);
+
+        GetWindowText(monitorComboBox, lpText, 256);
+        SendMessage(resolutionComboBox, CB_RESETCONTENT, NULL, NULL);
+        //MessageBox(hWnd, lpText, TEXT("Info"), MB_ICONINFORMATION);
+        fillResolutionComboBox(parseNumber(lpText), resolutionComboBox);
+        EnableWindow(resolutionComboBox, true);
+    }
+
+    return 0;
+}
+
+LRESULT wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UINT wmId = LOWORD(wParam);
+    UINT iCode = HIWORD(wParam);
+    HWND hCtl = (HWND)lParam;
+
+    // Analyse les sélections de menu :
+    switch (wmId) {
+    case IDM_ABOUT:
+        DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+        break;
+    case IDM_EXIT:
+        return !DestroyWindow(hWnd);
+    case ID_MONITOR:
+        return wndProcCommandMonitor(hWnd, iCode);
+    case ID_SAVE:
+        return wndProcCommandSave(hWnd);
+    case ID_PLAY:
+    {
+        wndProcCommandSave(hWnd);
+        //pseudoWinMain(hWnd);
+        MessageBox(hWnd, TEXT("Play button pressed"), TEXT("Info"), MB_ICONINFORMATION);
+    }
+    break;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
 }
 
 //
@@ -325,152 +270,194 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch (message)
-	{
-	case WM_COMMAND:
-	{
-		int wmId = LOWORD(wParam);
-		// Analyse les sélections de menu :
-		switch (wmId)
-		{
-		case IDM_ABOUT:
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			break;
-		case IDM_EXIT:
-			DestroyWindow(hWnd);
-			break;
-		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
-		}
-	}
-	break;
-	case WM_PAINT:
-	{
-		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hWnd, &ps);
-		// TODO: Ajoutez ici le code de dessin qui utilise hdc...
-		EndPaint(hWnd, &ps);
-	}
-	break;
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-	return 0;
+    switch (message)
+    {
+    case WM_CREATE:
+        return wndProcCreate(hWnd);
+    case WM_PAINT:
+    {
+        TCHAR loadedString[MAX_SMALL_STRING];
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        LoadString(::hInst, IDS_MONITOR_DESC, loadedString, MAX_SMALL_STRING);
+        TextOut(hdc, 5, 130, loadedString, _tcslen(loadedString));
+        TextOut(hdc, 5, 180, TEXT("Resolution:"), _tcslen(TEXT("Resolution:")));
+        TextOut(hdc, 190, 180, TEXT("Refresh rate:"), _tcslen(TEXT("Refresh rate:")));
+
+        EndPaint(hWnd, &ps);
+    }
+    break;
+    case WM_COMMAND:
+        return wndProcCommand(hWnd, message, wParam, lParam);
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
 }
 
-// Gestionnaire de messages pour la boîte de dialogue À propos de.
+// Gestionnaire de messages pour la boîte de dialogue "À propos de".
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR) TRUE;
 
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
 }
 
-BOOL checkRegKeyType(LPCSTR lpValueName, DWORD regKeyExpectedValue)
+BOOL getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData)
 {
-	DWORD regType;
+    BOOL result = FALSE;
 
-	if (hKey && lpValueName && !RegQueryValueExA(hKey, lpValueName, NULL, &regType, NULL, NULL))
-		return regKeyExpectedValue == regType;
-	return FALSE;
+    setCurrentHKEY(HKEY_LOCAL_MACHINE);
+    if (!lookForRegKey(TEXT(R"(SOFTWARE\CAPCOM\ONIMUSHA3 PC\1.00.000)")))
+        return FALSE;
+    if (hKey && lpValue && lpData)
+        result = RegGetValue(hKey, NULL, lpValue, RRF_RT_REG_SZ, NULL, lpData, lpcbData) == ERROR_SUCCESS;
+    setCurrentHKEY(0);
+
+    return result;
 }
 
-BOOL setCurrentHKEY(DWORD hKeyId)
+BOOL setCurrentHKEY(HKEY hKey)
 {
-	if (hKey)
-		resetGlobalHKEY();
+    if (hKey)
+        resetGlobalHKEY();
 
-	switch (hKeyId)
-	{
-	case 1:
-		hKeyCurrentId = hKeyId;
-		hKey = HKEY_CLASSES_ROOT;
-		return TRUE;
-	case 2:
-		hKeyCurrentId = hKeyId;
-		hKey = HKEY_CURRENT_USER;
-		return TRUE;
-	case 3:
-		hKeyCurrentId = hKeyId;
-		hKey = HKEY_LOCAL_MACHINE;
-		return TRUE;
-	case 4:
-		hKeyCurrentId = hKeyId;
-		hKey = HKEY_USERS;
-		return TRUE;
-	default:
-		hKeyCurrentId = 0;
-		hKey = 0;
-		return FALSE;
-	}
+    ::hKey = (hKey) ? hKey : 0;
+    return((BOOL)::hKey);
 }
 
 BOOL resetGlobalHKEY()
 {
-	if (hKey && hKey != HKEY_CLASSES_ROOT && hKey != HKEY_CURRENT_USER && hKey != HKEY_LOCAL_MACHINE && hKey != HKEY_USERS)
-		RegCloseKey(hKey);
+    if (::hKey && ::hKey != HKEY_CLASSES_ROOT && ::hKey != HKEY_CURRENT_CONFIG && ::hKey != HKEY_CURRENT_USER && ::hKey != HKEY_LOCAL_MACHINE && ::hKey != HKEY_USERS)
+        RegCloseKey(::hKey);
 
-	memset(char_409428, 0, sizeof(char_409428));
-	hKey = 0;
-
-	return FALSE;
+    ::hKey = 0;
+    return FALSE;
 }
 
-int checkPrintError(intptr_t processHandle)
+BOOL lookForRegKey(LPCTSTR lpSubKey)
 {
-	CHAR errorMessage[256U] = {0};
-	if (processHandle == SPAWNLP_ERROR && errno)
-	{
-		strerror_s(errorMessage, errno);
-		return MessageBoxA(0, (LPCSTR)errorMessage, NULL, MB_OK | MB_ICONERROR);
-	}
-	return 0;
+    HKEY phkResult = 0;
 
+    if (RegOpenKeyEx(hKey, lpSubKey, 0, KEY_READ | KEY_WOW64_32KEY, &phkResult) != ERROR_SUCCESS)
+        return FALSE;
+
+    resetGlobalHKEY();
+    ::hKey = phkResult;
+
+    return TRUE;
 }
 
-BOOL isEhshellRunning()
+LRESULT pseudoWinMain(HWND hWnd)
 {
-	HANDLE hProcessSnap;
-	PROCESSENTRY32 pe32;
+    HANDLE oni3GameExeFileHandler;
+    BOOL oni3ExeGameHandler;
+    TCHAR oni3GameExePath[MAXPATH_LENGTH];
+    TCHAR oni3GamePath[MAXPATH_LENGTH];
+    PROCESS_INFORMATION oni3GamePI;
+    DWORD oni3GamePathLength;
+    STARTUPINFO oni3GameSI;
+    OFSTRUCT ReOpenBuff;
 
-	// Take a snapshot of all processes in the system.
-	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (hProcessSnap == INVALID_HANDLE_VALUE)
-		return FALSE;
 
-	// Set the size of the structure before using it.
-	pe32.dwSize = sizeof(PROCESSENTRY32);
+    SecureZeroMemory(&oni3GameSI, sizeof(STARTUPINFO));
+    oni3GameSI.cb = sizeof(STARTUPINFO);
+    SecureZeroMemory(&oni3GamePI, sizeof(PROCESS_INFORMATION));
 
-	// Retrieve information about the first process, and exit if unsuccessful
-	if (!Process32First(hProcessSnap, &pe32))
-	{
-		CloseHandle(hProcessSnap);
-		return FALSE;
-	}
+    SecureZeroMemory(&ReOpenBuff, sizeof(OFSTRUCT));
+    getRegKeyValue(TEXT("InstallPath"), oni3GamePath, &oni3GamePathLength);
+    StringCchCopy(oni3GameExePath, MAXPATH_LENGTH, oni3GamePath);
+    StringCchCat(oni3GameExePath, MAXPATH_LENGTH, TEXT(R"(\oni3.exe)"));
 
-	while (wcscmp(pe32.szExeFile, TEXT("ehshell.exe")))
-	{
-		if (!Process32Next(hProcessSnap, &pe32))
-		{
-			CloseHandle(hProcessSnap);
-			return 0;
-		}
-	}
-	CloseHandle(hProcessSnap);
-	return 1;
+    oni3GameExeFileHandler = CreateFile(oni3GameExePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+
+    if (oni3GameExeFileHandler == INVALID_HANDLE_VALUE)
+    {
+        TCHAR sbuffer[256];
+        StringCchPrintf(sbuffer, 256, TEXT("Cannot Find the Game [%s]"), oni3GameExePath);
+        MessageBox(NULL, sbuffer, TEXT("Error"), MB_ICONERROR);
+    }
+    else
+    {
+        oni3ExeGameHandler = CreateProcess(oni3GameExePath, NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, oni3GamePath, &oni3GameSI, &oni3GamePI);
+        //WaitForSingleObject(oni3GamePI.hProcess, INFINITE);
+    }
+
+    CloseHandle(oni3GamePI.hProcess);
+    CloseHandle(oni3GamePI.hThread);
+    CloseHandle(oni3GameExeFileHandler);
+
+    return 0;
 }
+
+LONG initD3D()
+{
+    ::d3d = Direct3DCreate9(D3D_SDK_VERSION);
+
+    if (::d3d == NULL)
+        return E_FAIL;
+    return S_OK;
+}
+
+VOID destroyD3D()
+{
+    if (::d3d != NULL)
+        ::d3d->Release();
+}
+
+BOOL initDisplaysModes()
+{
+    UINT adapters = ::d3d->GetAdapterCount();
+    ::displaysModes = (D3DDISPLAYMODE ***)calloc(adapters + 1U, sizeof(D3DDISPLAYMODE **));
+
+    if (!adapters || ::displaysModes == NULL)
+        return FALSE;
+
+    for (UINT i = 0; i < adapters; i++) {
+        UINT modes = ::d3d->GetAdapterModeCount(i, D3DFMT_MODE);
+        ::displaysModes[i] = (D3DDISPLAYMODE **)calloc(modes + 1U, sizeof(D3DDISPLAYMODE *));
+
+        if (::displaysModes[i] == NULL)
+            return FALSE;
+
+        for (UINT j = 0; j < modes; j++) {
+            ::displaysModes[i][j] = (D3DDISPLAYMODE *)calloc(1, sizeof(D3DDISPLAYMODE));
+            ::d3d->EnumAdapterModes(i, D3DFMT_MODE, j, ::displaysModes[i][j]);
+            ::displaysModes[i][j + 1] = NULL;
+        }
+    }
+
+    return TRUE;
+}
+
+#pragma warning(push)
+#pragma warning(disable: 6001)
+VOID destroyDisplaysModes()
+{
+    if (::displaysModes == NULL)
+        return;
+
+    for (UINT i = 0; ::displaysModes[i]; i++) {
+        for (UINT j = 0; ::displaysModes[i][j]; j++) {
+            free(::displaysModes[i][j]);
+        }
+        free(::displaysModes[i]);
+    }
+    free(::displaysModes);
+}
+#pragma warning(pop)

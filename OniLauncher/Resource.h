@@ -1,30 +1,36 @@
 //{{NO_DEPENDENCIES}}
-// Fichier Include généré par Microsoft Visual C++.
+// fichier Include Microsoft Visual C++.
 // Utilisé par OniLauncher.rc
-
-#define IDS_APP_TITLE			103
-
-#define IDR_MAINFRAME			128
-#define IDD_ONILAUNCHER_DIALOG	102
-#define IDD_ABOUTBOX			103
-#define IDM_ABOUT				104
-#define IDM_EXIT				105
-#define IDI_ONILAUNCHER			107
-#define IDI_SMALL				108
-#define IDC_ONILAUNCHER			109
-#define IDC_MYICON				2
-#ifndef IDC_STATIC
-#define IDC_STATIC				-1
-#endif
-// Valeurs par défaut suivantes des nouveaux objets
 //
+#define IDC_MYICON                      2
+#define IDD_ONILAUNCHER_DIALOG          102
+#define IDS_APP_TITLE                   103
+#define IDD_ABOUTBOX                    103
+#define IDM_ABOUT                       104
+#define IDS_MONITOR                     104
+#define IDM_EXIT                        105
+#define IDS_MONIHEAD                    105
+#define IDS_MONITOR_DESC                105
+#define IDI_ONILAUNCHER                 107
+#define IDI_SMALL                       108
+#define IDC_ONILAUNCHER                 109
+#define IDR_MAINFRAME                   128
+#define ID_MONITOR                      129
+#define ID_RESOLUTION                   130
+#define ID_REFRESH_RATE                 131
+#define ID_PLAY                         132
+#define ID_SAVE                         133
+#define ID_DEBUG                        134
+#define IDC_STATIC                      -1
+
+// Next default values for new objects
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-
-#define _APS_NO_MFC					130
-#define _APS_NEXT_RESOURCE_VALUE	129
-#define _APS_NEXT_COMMAND_VALUE		32771
-#define _APS_NEXT_CONTROL_VALUE		1000
-#define _APS_NEXT_SYMED_VALUE		110
+#define _APS_NO_MFC                     1
+#define _APS_NEXT_RESOURCE_VALUE        135
+#define _APS_NEXT_COMMAND_VALUE         32771
+#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
