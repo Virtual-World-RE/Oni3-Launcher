@@ -25,4 +25,4 @@ This project use a modified version of [OniPatch](https://github.com/xaviermonin
 
 ## License
 
-This project is under MIT license (See [LICENSE](https://github.com/Virtual-World-RE/O3RE/blob/master/LICENSE]))
+This project is under MIT license (See [LICENSE](https://github.com/Virtual-World-RE/O3RE/blob/master/LICENSE))
