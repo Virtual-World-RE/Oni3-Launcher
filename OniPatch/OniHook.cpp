@@ -6,7 +6,7 @@ Direct3DCreate9Type OniHook::TrueDirect3DCreate9 = nullptr;
 OniHook *OniHook::instance = nullptr;
 
 HWND WINAPI OniHook::MyCreateWindowExW(
-    DWORD dwExStyle,
+    _In_     DWORD     dwExStyle,
     _In_opt_ LPCWSTR   lpClassName,
     _In_opt_ LPCWSTR   lpWindowName,
     _In_     DWORD     dwStyle,

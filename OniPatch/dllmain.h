@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pch.h";
+#include "pch.h"
 #include "Utils.h"
 #include "Onihook.h"
 

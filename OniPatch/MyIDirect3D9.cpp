@@ -59,9 +59,9 @@ HRESULT MyIDirect3D9::EnumAdapterModes(THIS_ UINT Adapter, D3DFORMAT Format, UIN
     TraceParam("D3DFORMAT", Format);
     TraceParam("Mode", Mode);
     TraceParam("pMode ADDR", pMode);
-    TraceParam("d3dDisplayMode Width", pMode->Width);
-    TraceParam("d3dDisplayMode Height", pMode->Height);
-    TraceParam("d3dDisplayMode Refresh", pMode->RefreshRate);
+    TraceParam("pMode.Width", pMode->Width);
+    TraceParam("pMode.Height", pMode->Height);
+    TraceParam("pMode.RefreshRate", pMode->RefreshRate);
 
     return this->original->EnumAdapterModes(Adapter, Format, Mode, pMode);
 }
@@ -108,6 +108,9 @@ HMONITOR MyIDirect3D9::GetAdapterMonitor(THIS_ UINT Adapter)
 
 HRESULT MyIDirect3D9::CreateDevice(THIS_ UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS *pPresentationParameters, IDirect3DDevice9 **ppReturnedDeviceInterface)
 {
+    HRESULT hResult;
+    IDirect3DDevice9 *trueDevice = NULL;
+
     TraceFunc();
 
     TraceParam("BackBufferWidth", pPresentationParameters->BackBufferWidth);
@@ -130,10 +133,7 @@ HRESULT MyIDirect3D9::CreateDevice(THIS_ UINT Adapter, D3DDEVTYPE DeviceType, HW
         //pPresentationParameters->Windowed = FALSE;
     }
 
-    IDirect3DDevice9 *trueDevice = nullptr;
-
-    HRESULT hResult = this->original->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, &trueDevice);
-
+    hResult = this->original->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, &trueDevice);
     (*ppReturnedDeviceInterface) = new MyIDirect3DDevice9(trueDevice);
 
     return hResult;

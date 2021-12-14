@@ -197,7 +197,7 @@ UINT parseNumber(LPTSTR str)
         return -1;
 
     for (INT i = 0; str[i]; i++) {
-        if (_tisdigit(str[i])) {
+        if (_istdigit(str[i])) {
             number[j++] = str[i];
         }
     }
