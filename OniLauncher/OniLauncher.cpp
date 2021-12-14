@@ -1,6 +1,3 @@
-// OniLauncher.cpp : Définit le point d'entrée de l'application.
-//
-
 /*
  ** This file is part of the Onimusha 3:RE Project !
  **
@@ -8,22 +5,17 @@
  **
  ** Author: Gabriel GRONDIN (GGLinnk) <gglinnk@protonmail.com>
  ** Contributors (See CONTRIBUTION.md):
- **  AlgoFlash
- **  Rigodron
- **  Xydion
  */
 
-#include "pch.h"
 #include "OniLauncher.h"
 
 // Variables globales :
 HINSTANCE hInst;                                // instance actuelle
 TCHAR szTitle[MAX_LOADSTRING];                  // Texte de la barre de titre
 TCHAR szWindowClass[MAX_LOADSTRING];            // nom de la classe de fenêtre principale
+
 D3DDISPLAYMODE ***displaysModes = NULL;
 LPDIRECT3D9 d3d = NULL;
-DWORD hKeyCurrentId;
-HKEY hKey;
 
 int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PTSTR pCmdLine, _In_ int nCmdShow)
 {
@@ -134,12 +126,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 void fillMonitorComboBox(HWND monitorComboBox)
 {
-    TCHAR buffer[MAX_SMALL_STRING + 5];
+    TCHAR buffer[MAX_SMALL_STRING];
     TCHAR monitorStr[MAX_SMALL_STRING];
     LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_SMALL_STRING);
     
     for (UINT i = 0; ::displaysModes[i]; i++) {
-        _stprintf_s(buffer, MAX_SMALL_STRING + 5, TEXT("%s %d"), monitorStr, i);
+        _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%s %d"), monitorStr, i);
         SendMessage(monitorComboBox, CB_ADDSTRING, 0, (LPARAM)buffer);
     }
 }
@@ -173,7 +165,7 @@ LRESULT wndProcCreate(HWND hWnd)
     return 0;
 }
 
-LRESULT wndProcCommandSave(HWND hWnd)
+LRESULT saveConfigFile(HWND hWnd)
 {
     HWND monitorComboBox = GetDlgItem(hWnd, ID_MONITOR);
     HWND resolutionComboBox = GetDlgItem(hWnd, ID_RESOLUTION);
@@ -244,10 +236,10 @@ LRESULT wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case ID_MONITOR:
         return wndProcCommandMonitor(hWnd, iCode);
     case ID_SAVE:
-        return wndProcCommandSave(hWnd);
+        return saveConfigFile(hWnd);
     case ID_PLAY:
     {
-        wndProcCommandSave(hWnd);
+        saveConfigFile(hWnd);
         //pseudoWinMain(hWnd);
         MessageBox(hWnd, TEXT("Play button pressed"), TEXT("Info"), MB_ICONINFORMATION);
     }
@@ -318,93 +310,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-BOOL getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData)
-{
-    BOOL result = FALSE;
-
-    setCurrentHKEY(HKEY_LOCAL_MACHINE);
-    if (!lookForRegKey(TEXT(R"(SOFTWARE\CAPCOM\ONIMUSHA3 PC\1.00.000)")))
-        return FALSE;
-    if (hKey && lpValue && lpData)
-        result = RegGetValue(hKey, NULL, lpValue, RRF_RT_REG_SZ, NULL, lpData, lpcbData) == ERROR_SUCCESS;
-    setCurrentHKEY(0);
-
-    return result;
-}
-
-BOOL setCurrentHKEY(HKEY hKey)
-{
-    if (hKey)
-        resetGlobalHKEY();
-
-    ::hKey = (hKey) ? hKey : 0;
-    return((BOOL)::hKey);
-}
-
-BOOL resetGlobalHKEY()
-{
-    if (::hKey && ::hKey != HKEY_CLASSES_ROOT && ::hKey != HKEY_CURRENT_CONFIG && ::hKey != HKEY_CURRENT_USER && ::hKey != HKEY_LOCAL_MACHINE && ::hKey != HKEY_USERS)
-        RegCloseKey(::hKey);
-
-    ::hKey = 0;
-    return FALSE;
-}
-
-BOOL lookForRegKey(LPCTSTR lpSubKey)
-{
-    HKEY phkResult = 0;
-
-    if (RegOpenKeyEx(hKey, lpSubKey, 0, KEY_READ | KEY_WOW64_32KEY, &phkResult) != ERROR_SUCCESS)
-        return FALSE;
-
-    resetGlobalHKEY();
-    ::hKey = phkResult;
-
-    return TRUE;
-}
-
-LRESULT pseudoWinMain(HWND hWnd)
-{
-    HANDLE oni3GameExeFileHandler;
-    BOOL oni3ExeGameHandler;
-    TCHAR oni3GameExePath[MAXPATH_LENGTH];
-    TCHAR oni3GamePath[MAXPATH_LENGTH];
-    PROCESS_INFORMATION oni3GamePI;
-    DWORD oni3GamePathLength;
-    STARTUPINFO oni3GameSI;
-    OFSTRUCT ReOpenBuff;
-
-
-    SecureZeroMemory(&oni3GameSI, sizeof(STARTUPINFO));
-    oni3GameSI.cb = sizeof(STARTUPINFO);
-    SecureZeroMemory(&oni3GamePI, sizeof(PROCESS_INFORMATION));
-
-    SecureZeroMemory(&ReOpenBuff, sizeof(OFSTRUCT));
-    getRegKeyValue(TEXT("InstallPath"), oni3GamePath, &oni3GamePathLength);
-    StringCchCopy(oni3GameExePath, MAXPATH_LENGTH, oni3GamePath);
-    StringCchCat(oni3GameExePath, MAXPATH_LENGTH, TEXT(R"(\oni3.exe)"));
-
-    oni3GameExeFileHandler = CreateFile(oni3GameExePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
-
-    if (oni3GameExeFileHandler == INVALID_HANDLE_VALUE)
-    {
-        TCHAR sbuffer[256];
-        StringCchPrintf(sbuffer, 256, TEXT("Cannot Find the Game [%s]"), oni3GameExePath);
-        MessageBox(NULL, sbuffer, TEXT("Error"), MB_ICONERROR);
-    }
-    else
-    {
-        oni3ExeGameHandler = CreateProcess(oni3GameExePath, NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, oni3GamePath, &oni3GameSI, &oni3GamePI);
-        //WaitForSingleObject(oni3GamePI.hProcess, INFINITE);
-    }
-
-    CloseHandle(oni3GamePI.hProcess);
-    CloseHandle(oni3GamePI.hThread);
-    CloseHandle(oni3GameExeFileHandler);
-
-    return 0;
-}
-
 LONG initD3D()
 {
     ::d3d = Direct3DCreate9(D3D_SDK_VERSION);
@@ -445,8 +350,6 @@ BOOL initDisplaysModes()
     return TRUE;
 }
 
-#pragma warning(push)
-#pragma warning(disable: 6001)
 VOID destroyDisplaysModes()
 {
     if (::displaysModes == NULL)
@@ -455,9 +358,11 @@ VOID destroyDisplaysModes()
     for (UINT i = 0; ::displaysModes[i]; i++) {
         for (UINT j = 0; ::displaysModes[i][j]; j++) {
             free(::displaysModes[i][j]);
+            ::displaysModes[i][j] = NULL;
         }
         free(::displaysModes[i]);
+        ::displaysModes[i] = NULL;
     }
     free(::displaysModes);
+    ::displaysModes = NULL;
 }
-#pragma warning(pop)

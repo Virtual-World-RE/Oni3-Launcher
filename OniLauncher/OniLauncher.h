@@ -1,3 +1,12 @@
+/*
+ ** This file is part of the Onimusha 3:RE Project !
+ **
+ ** You should have received a copy of the LICENSE along with this program.
+ **
+ ** Author: Gabriel GRONDIN (GGLinnk) <gglinnk@protonmail.com>
+ ** Contributors (See CONTRIBUTION.md):
+ */
+
 #pragma once
 
 #ifdef UNICODE
@@ -12,10 +21,11 @@
 #endif
 #endif
 
+#include "pch.h"
+#include "error.h"
 #include "Resource.h"
 
 #define MAX_LOADSTRING 100
-#define MAXPATH_LENGTH 1024
 #define MAX_STRERROR_S_LENGTH 94
 #define MAX_SMALL_STRING 100
 
@@ -33,22 +43,18 @@
   #define WINMAIN WinMain
 #endif
 
-// Sub-function for WndProc()
-LRESULT          wndProcCreate(HWND hWnd);
-LRESULT          wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-// Prototype of OniLauncher.cpp functions:
+// Prototype of OniLauncher.cpp windows related functions
 BOOL             MyRegisterClass(HINSTANCE hInstance);
 BOOL             InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
-// Reversed functions
-LRESULT          pseudoWinMain(HWND hWnd);
-BOOL             resetGlobalHKEY();
-BOOL             setCurrentHKEY(HKEY hKeyId);
-BOOL             getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData);
-BOOL             lookForRegKey(LPCTSTR lpSubKey);
+/// Sub-function for main window process WndProc()
+LRESULT          wndProcCreate(HWND hWnd);
+LRESULT          wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+// 
+LRESULT          saveConfigFile(HWND hWnd);
 
 // DirectX 9 related functions
 LONG             initD3D();
