@@ -22,25 +22,43 @@ HWND WINAPI OniHook::MyCreateWindowExW(
 {
     TraceFunc();
 
-    if (lpWindowName == NULL)
-        exit(302);
+    if (lpWindowName != NULL) {
+        TraceW("Window class", lpClassName);
+        TraceW("Window name", lpWindowName);
+        TraceStyle(dwStyle);
+        TraceParam("X", X);
+        TraceParam("Y", Y);
+        TraceParam("Width", nWidth);
+        TraceParam("Height", nHeight);
 
-    TraceParam("Window name", lpWindowName);
+        if (!wcscmp(lpWindowName, L"oni3")) {
+            RECT rect;
+            TraceMsg("Onimusha 3 window found");
 
-    if (!wcscmp(lpWindowName, L"oni3")) {
-        TraceMsg("Oni window found");
+            // BORDERLESS_STYLE: WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX
 
-        const DWORD borderLessStyle = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
-        const DWORD resizableStyle = WS_TILEDWINDOW;
+            X = CW_USEDEFAULT;
+            Y = CW_USEDEFAULT;
 
-        X = CW_USEDEFAULT;
-        Y = CW_USEDEFAULT;
+            SecureZeroMemory(&rect, sizeof(RECT));
+            rect.bottom = 1080;
+            rect.right = 1920;
+            AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
 
-        // TODO: Read from config
-        nWidth = 1920;
-        nHeight = 1080;
-        dwExStyle = WS_EX_APPWINDOW;
-        dwStyle = resizableStyle;
+            // TODO: Read from config
+            nWidth = rect.right - rect.left;
+            nHeight = rect.bottom - rect.top;
+            dwExStyle = WS_EX_APPWINDOW;
+            dwStyle = WS_OVERLAPPEDWINDOW;
+
+            TraceStyle(dwStyle);
+            TraceParam("New X", X);
+            TraceParam("New Y", Y);
+            TraceParam("New Width", nWidth);
+            TraceParam("New Height", nHeight);
+        }
+
+        //exit(302);
     }
 
     HWND result = TrueCreateWindowExW(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);

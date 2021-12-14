@@ -6,4 +6,6 @@
 #include <iostream>
 #include <detours.h>
 #include <d3d9helper.h>
+#include <stdio.h>
 #include <wchar.h>
+#include <tchar.h>
