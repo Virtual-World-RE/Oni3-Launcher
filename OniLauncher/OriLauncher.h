@@ -27,7 +27,6 @@ private:
     TCHAR oni3GameExePath[MAX_PATH];
     TCHAR oni3GamePath[MAX_PATH];
 
-
     BOOL resetGlobalHKEY();
     BOOL setCurrentHKEY(HKEY hKeyId);
     BOOL getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData);

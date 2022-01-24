@@ -38,7 +38,7 @@ BOOL OriLauncher::checkError()
 
 BOOL OriLauncher::checkGamePath()
 {
-    
+    return TRUE;
 }
 
 BOOL OriLauncher::pseudoWinMain()
