@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "error.h"
 
-int showWinApiError(HWND hWnd = NULL, DWORD messageBoxFlags = MB_OK, LPCTSTR messageBoxTitle = TEXT("Error"))
+int showWinApiError(HWND hWnd, DWORD messageBoxFlags, LPCTSTR messageBoxTitle)
 {
     int status = -1;
     DWORD lastError = 0UL;
