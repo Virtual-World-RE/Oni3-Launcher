@@ -129,6 +129,7 @@ LRESULT wndProcCreate(HWND hWnd)
     HWND monitorComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 150, 240, 200, hWnd, (HMENU)ID_MONITOR, hInst, NULL);
     HWND resolutionComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 200, 130, 200, hWnd, (HMENU)ID_RESOLUTION, hInst, NULL);
     HWND refreshRateComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 140, 200, 105, 200, hWnd, (HMENU)ID_REFRESH_RATE, hInst, NULL);
+    HWND displayModeComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_DISPLAY_MODE, hInst, NULL);
     //HWND fpsComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_FRAME_PER_SECONDS, hInst, NULL);
 
     LoadString(::hInst, IDS_MONITOR_DESC, loadedString, MAX_SMALL_STRING);
@@ -137,6 +138,8 @@ LRESULT wndProcCreate(HWND hWnd)
     CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 180, 130, 16, hWnd, NULL, hInst, NULL);
     LoadString(::hInst, IDS_REFRESH_DESC, loadedString, MAX_SMALL_STRING);
     CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 140, 180, 105, 16, hWnd, NULL, hInst, NULL);
+    LoadString(::hInst, IDS_DISPLAY_MODE_DESC, loadedString, MAX_SMALL_STRING);
+    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 230, 240, 16, hWnd, NULL, hInst, NULL);
 
     LoadString(::hInst, IDS_DEBUG, loadedString, MAX_SMALL_STRING);
     CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 295, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
@@ -147,7 +150,7 @@ LRESULT wndProcCreate(HWND hWnd)
 
     EnumChildWindows(hWnd, (WNDENUMPROC)SetFont, (LPARAM)GetStockObject(DEFAULT_GUI_FONT));
 
-    oniLauncher.setHandlers(hWnd, monitorComboBox, resolutionComboBox, refreshRateComboBox);
+    oniLauncher.setHandlers(hWnd, monitorComboBox, resolutionComboBox, refreshRateComboBox, displayModeComboBox);
     oniLauncher.fillMonitorComboBox();
 
     return 0;
@@ -415,12 +418,13 @@ BOOL OniLauncher::initMonitorDisplayModes()
     return TRUE;
 }
 
-VOID OniLauncher::setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox)
+VOID OniLauncher::setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND displayModeComboBox)
 {
     this->hWnd = hWnd;
     this->monitorComboBox = monitorComboBox;
     this->resolutionComboBox = resolutionComboBox;
     this->refreshRateComboBox = refreshRateComboBox;
+    this->displayModeComboBox = displayModeComboBox;
 }
 
 

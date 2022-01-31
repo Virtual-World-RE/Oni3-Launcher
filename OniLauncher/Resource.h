@@ -8,10 +8,11 @@
 #define ID_MONITOR                      200
 #define ID_RESOLUTION                   201
 #define ID_REFRESH_RATE                 202
-#define ID_FRAME_PER_SECONDS            203
-#define ID_PLAY                         204
-#define ID_SAVE                         205
-#define ID_DEBUG                        206
+#define ID_DISPLAY_MODE                 203
+#define ID_FRAME_PER_SECONDS            204
+#define ID_PLAY                         205
+#define ID_SAVE                         206
+#define ID_DEBUG                        207
 
 #define IDM_ABOUT                       300
 #define IDM_EXIT                        301
@@ -25,11 +26,12 @@
 #define IDS_ONILAUNCHER                 601
 #define IDS_MONITOR                     602
 #define IDS_MONITOR_DESC                603
-#define IDS_REFRESH_DESC                604
-#define IDS_RESOLUTION_DESC             605
-#define IDS_DEBUG                       606
-#define IDS_SAVE                        607
-#define IDS_PLAY                        608
+#define IDS_RESOLUTION_DESC             604
+#define IDS_REFRESH_DESC                605
+#define IDS_DISPLAY_MODE_DESC           606
+#define IDS_DEBUG                       607
+#define IDS_SAVE                        608
+#define IDS_PLAY                        609
 
 
 //#define IDC_MYICON                      2

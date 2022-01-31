@@ -86,6 +86,7 @@ private:
     HWND        monitorComboBox = NULL;
     HWND        resolutionComboBox = NULL;
     HWND        refreshRateComboBox = NULL;
+    HWND        displayModeComboBox = NULL;
 
     VOID        initD3D();
     BOOL        initMonitorDisplayModes();
@@ -100,7 +101,7 @@ public:
 
     OniLauncher();
 
-    VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox);
+    VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox);
 
     UINT        fetchCurrentMonitor();
     RESOLUTION  fetchCurrentResolution();
