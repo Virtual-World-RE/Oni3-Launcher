@@ -79,6 +79,27 @@ HRESULT MyIDirect3D9::EnumAdapterModes(THIS_ UINT Adapter, D3DFORMAT Format, UIN
     TraceParam("New pMode.RefreshRate", pMode->RefreshRate);
     TraceParam("New pMode.Format", pMode->Format);
 
+    switch (hResult) {
+    case D3D_OK:
+        TraceMsg("HRESULT: D3D_OK");
+        break;
+    case D3DERR_DEVICELOST:
+        TraceMsg("HRESULT INCOMP: D3DERR_DEVICELOST");
+        break;
+    case D3DERR_INVALIDCALL:
+        TraceMsg("HRESULT: D3DERR_INVALIDCALL");
+        break;
+    case D3DERR_NOTAVAILABLE:
+        TraceMsg("HRESULT: D3DERR_NOTAVAILABLE");
+        break;
+    case D3DERR_OUTOFVIDEOMEMORY:
+        TraceMsg("HRESULT INCOMP: D3DERR_OUTOFVIDEOMEMORY");
+        break;
+    default:
+        TraceParam("Unknown hResult", hResult);
+        break;
+    }
+
     return hResult;
 }
 
@@ -102,6 +123,26 @@ HRESULT MyIDirect3D9::GetAdapterDisplayMode(THIS_ UINT Adapter, D3DDISPLAYMODE *
     TraceParam("New pMode.RefreshRate", pMode->RefreshRate);
     TraceParam("New pMode.Format", pMode->Format);
 
+    switch (hResult) {
+    case D3D_OK:
+        TraceMsg("HRESULT: D3D_OK");
+        break;
+    case D3DERR_DEVICELOST:
+        TraceMsg("HRESULT INCOMP: D3DERR_DEVICELOST");
+        break;
+    case D3DERR_INVALIDCALL:
+        TraceMsg("HRESULT: D3DERR_INVALIDCALL");
+        break;
+    case D3DERR_NOTAVAILABLE:
+        TraceMsg("HRESULT INCOMP: D3DERR_NOTAVAILABLE");
+        break;
+    case D3DERR_OUTOFVIDEOMEMORY:
+        TraceMsg("HRESULT INCOMP: D3DERR_OUTOFVIDEOMEMORY");
+        break;
+    default:
+        TraceParam("Unknown hResult", hResult);
+        break;
+    }
 
     return hResult;
 }
@@ -182,6 +223,27 @@ HRESULT MyIDirect3D9::CreateDevice(THIS_ UINT Adapter, D3DDEVTYPE DeviceType, HW
 
     hResult = this->original->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, &trueDevice);
     (*ppReturnedDeviceInterface) = new MyIDirect3DDevice9(trueDevice);
+
+    switch (hResult) {
+    case D3D_OK:
+        TraceMsg("HRESULT: D3D_OK");
+        break;
+    case D3DERR_DEVICELOST:
+        TraceMsg("HRESULT: D3DERR_DEVICELOST");
+        break;
+    case D3DERR_INVALIDCALL:
+        TraceMsg("HRESULT: D3DERR_INVALIDCALL");
+        break;
+    case D3DERR_NOTAVAILABLE:
+        TraceMsg("HRESULT: D3DERR_NOTAVAILABLE");
+        break;
+    case D3DERR_OUTOFVIDEOMEMORY:
+        TraceMsg("HRESULT: D3DERR_OUTOFVIDEOMEMORY");
+        break;
+    default:
+        TraceParam("Unknown hResult", hResult);
+        break;
+    }
 
     return hResult;
 }
