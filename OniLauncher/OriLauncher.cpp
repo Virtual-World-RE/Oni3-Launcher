@@ -7,9 +7,12 @@
  ** Contributors (See CONTRIBUTION.md):
  */
 
-#include "OriLauncher.h"
+#include "OriLauncher.hpp"
 
-OriLauncher::OriLauncher(HWND originHWnd)
+/// <summary>
+/// 
+/// </summary>
+OriLauncher::OriLauncher()
 {
     SecureZeroMemory(&oni3GameSI, sizeof(STARTUPINFO));
     SecureZeroMemory(&oni3GamePI, sizeof(PROCESS_INFORMATION));
@@ -17,10 +20,18 @@ OriLauncher::OriLauncher(HWND originHWnd)
     SecureZeroMemory(oni3GameExePath, sizeof(TCHAR) * MAX_PATH);
 
     oni3GameSI.cb = sizeof(STARTUPINFO);
-    hWnd = originHWnd;
     getRegKeyValue(TEXT("InstallPath"), oni3GamePath, &oni3GamePathLength);
     StringCchCopy(oni3GameExePath, MAX_PATH, oni3GamePath);
     StringCchCat(oni3GameExePath, MAX_PATH, TEXT(R"(\oni3.exe)"));
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="hWnd"></param>
+VOID OriLauncher::setOriginHandler(HWND hWnd)
+{
+    this->hWnd = hWnd;
 }
 
 /// <summary>
@@ -36,11 +47,19 @@ BOOL OriLauncher::checkError()
     return status;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <returns></returns>
 BOOL OriLauncher::checkGamePath()
 {
     return TRUE;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <returns></returns>
 BOOL OriLauncher::pseudoWinMain()
 {
     oni3GameExeFileHandler = CreateFile(oni3GameExePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
@@ -57,6 +76,10 @@ BOOL OriLauncher::pseudoWinMain()
     return 0;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <returns></returns>
 BOOL OriLauncher::resetGlobalHKEY()
 {
     if (hKey && hKey != HKEY_CLASSES_ROOT && hKey != HKEY_CURRENT_CONFIG && hKey != HKEY_CURRENT_USER && hKey != HKEY_LOCAL_MACHINE && hKey != HKEY_USERS)
@@ -66,6 +89,11 @@ BOOL OriLauncher::resetGlobalHKEY()
     return FALSE;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="hKey"></param>
+/// <returns></returns>
 BOOL OriLauncher::setCurrentHKEY(HKEY hKey)
 {
     if (hKey)
@@ -75,6 +103,13 @@ BOOL OriLauncher::setCurrentHKEY(HKEY hKey)
     return((BOOL)hKey);
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="lpValue"></param>
+/// <param name="lpData"></param>
+/// <param name="lpcbData"></param>
+/// <returns></returns>
 BOOL OriLauncher::getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData)
 {
     BOOL result = FALSE;
@@ -89,6 +124,11 @@ BOOL OriLauncher::getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbDat
     return result;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="lpSubKey"></param>
+/// <returns></returns>
 BOOL OriLauncher::lookForRegKey(LPCTSTR lpSubKey)
 {
     HKEY phkResult = 0;
@@ -102,6 +142,9 @@ BOOL OriLauncher::lookForRegKey(LPCTSTR lpSubKey)
     return TRUE;
 }
 
+/// <summary>
+/// 
+/// </summary>
 OriLauncher::~OriLauncher()
 {
     int status = 0;

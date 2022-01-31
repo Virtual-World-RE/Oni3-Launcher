@@ -27,6 +27,10 @@
 #include <strsafe.h>
 #include <uxtheme.h>
 #include <winbase.h>
+#include <pathcch.h>
+#include <shlobj_core.h>
+
+#include <nlohmann/json.hpp>
 
 // DirectX 9 headers
 //#include <d3d9.h>

@@ -24,16 +24,18 @@
 #include "pch.h"
 #include "error.h"
 #include "Resource.h"
+#include "OriLauncher.hpp"
 
 #define MAX_LOADSTRING 100
 #define MAX_STRERROR_S_LENGTH 94
 #define MAX_SMALL_STRING 100
 
-#define MAIN_WINDOW_WIDTH 300
-#define MAIN_WINDOW_HEIGHT 500
+#define MAIN_WINDOW_WIDTH 250
+#define MAIN_WINDOW_HEIGHT 400
 
 #define D3DFMT_MODE D3DFMT_X8R8G8B8
 
+#define WINDOWS_STYLE WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX
 #define DEFAULT_STYLE WS_CHILD | WS_VISIBLE
 #define DROPDOWN_COMBO_BOX DEFAULT_STYLE | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
@@ -42,6 +44,20 @@
 #else
   #define WINMAIN WinMain
 #endif
+
+using json = nlohmann::json;
+
+typedef struct MONITORDISPLAYMODES
+{
+    D3DDISPLAYMODE displayMode;
+    struct MONITORDISPLAYMODES *next;
+} MONITORDISPLAYMODES;
+
+typedef struct
+{
+    UINT width;
+    UINT height;
+} RESOLUTION;
 
 // Prototype of OniLauncher.cpp windows related functions
 BOOL             MyRegisterClass(HINSTANCE hInstance);
@@ -53,11 +69,56 @@ INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 LRESULT          wndProcCreate(HWND hWnd);
 LRESULT          wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-// 
-LRESULT          saveConfigFile(HWND hWnd);
+LPUINT           getNumbers(LPTSTR str);
 
-// DirectX 9 related functions
-LONG             initD3D();
-VOID             destroyD3D();
-BOOL             initDisplaysModes();
-VOID             destroyDisplaysModes();
+class OniLauncher
+{
+private:
+    BOOL        configured = FALSE;
+    LPDIRECT3D9 d3d = NULL;
+
+    UINT        currentMonitor = 0;
+    RESOLUTION  currentResolution = { 0, 0 };
+    UINT        currentRefreshRate = 0;
+    BOOL        debugEnabled = FALSE;
+
+    HWND        hWnd = NULL;
+    HWND        monitorComboBox = NULL;
+    HWND        resolutionComboBox = NULL;
+    HWND        refreshRateComboBox = NULL;
+
+    VOID        initD3D();
+    BOOL        initMonitorDisplayModes();
+
+    BOOL        jsonLoadConfig();
+    BOOL        jsonConfigExists();
+
+    VOID        destroyMonitorDisplayModes();
+    VOID        destroyD3D();
+public:
+    MONITORDISPLAYMODES **monitorDisplayModes = NULL;
+
+    OniLauncher();
+
+    VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox);
+
+    UINT        fetchCurrentMonitor();
+    RESOLUTION  fetchCurrentResolution();
+    UINT        fetchCurrentRefreshRate();
+                
+    VOID        resetMonitor();
+    VOID        resetResolution();
+    VOID        resetRefreshRate();
+                
+    UINT        getCurrentMonitor();
+    RESOLUTION  getCurrentResolution();
+    UINT        getCurrentRefreshRate();
+                
+    VOID        fillMonitorComboBox();
+    VOID        fillResolutionComboBox();
+    VOID        fillRefreshComboBox();
+                
+    LRESULT     saveConfigFile();
+
+    ~OniLauncher();
+};
