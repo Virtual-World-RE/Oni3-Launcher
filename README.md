@@ -7,8 +7,8 @@ Open Source Fixes for Onimusha 3: Demon Siege.
 ## How to Use
 
 1. Download the latest release [here](https://github.com/Virtual-World-RE/O3RE/releases/latest/).
-2. Extract .zip to the root of the game (Default ``C:\\Program Files (x86)\CAPCOM\ONIMUSHA3\``) <!-- Or use our smart exe installer -->
-3. Execute ``Oni3Launcher.exe``, configure, and Play !
+2. Extract .zip to the root of the game (Default ``C:\Program Files (x86)\CAPCOM\ONIMUSHA3\``) <!-- Or use our smart exe installer -->
+3. Execute ``OniLauncher.exe``, configure, and Play !
 
 
 
