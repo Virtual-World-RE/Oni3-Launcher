@@ -1,6 +1,13 @@
 #include "pch.h"
 #include "error.h"
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="hWnd"></param>
+/// <param name="messageBoxFlags"></param>
+/// <param name="messageBoxTitle"></param>
+/// <returns></returns>
 int showWinApiError(HWND hWnd, DWORD messageBoxFlags, LPCTSTR messageBoxTitle)
 {
     int status = -1;
