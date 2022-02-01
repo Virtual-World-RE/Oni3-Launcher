@@ -22,37 +22,20 @@ OriLauncher::OriLauncher()
     oni3GameSI.cb = sizeof(STARTUPINFO);
     getRegKeyValue(TEXT("InstallPath"), oni3GamePath, &oni3GamePathLength);
     StringCchCopy(oni3GameExePath, MAX_PATH, oni3GamePath);
-    StringCchCat(oni3GameExePath, MAX_PATH, TEXT(R"(\oni3.exe)"));
+    PathCchAppend(oni3GameExePath, MAX_PATH, TEXT(R"(\oni3.exe)"));
+
+    checkGamePaths();
 }
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="hWnd"></param>
-VOID OriLauncher::setOriginHandler(HWND hWnd)
-{
-    this->hWnd = hWnd;
-}
-
-/// <summary>
-/// 
-/// </summary>
-/// <returns>
-///  BOOLEAN: TRUE if an error is detected.
-/// </returns>
-BOOL OriLauncher::checkError()
-{
-    BOOL status = FALSE;
-    checkGamePath();
-    return status;
-}
 
 /// <summary>
 /// 
 /// </summary>
 /// <returns></returns>
-BOOL OriLauncher::checkGamePath()
+BOOL OriLauncher::checkGamePaths()
 {
+    if (!PathFileExists(oni3GamePath) || !PathFileExists(oni3GameExePath) || !PathIsDirectory(oni3GamePath) || PathIsDirectory(oni3GameExePath))
+        return FALSE;
     return TRUE;
 }
 
@@ -60,20 +43,20 @@ BOOL OriLauncher::checkGamePath()
 /// 
 /// </summary>
 /// <returns></returns>
-BOOL OriLauncher::pseudoWinMain()
+BOOL OriLauncher::pseudoWinMain(HWND hWnd)
 {
     oni3GameExeFileHandler = CreateFile(oni3GameExePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 
+    this->hWnd = hWnd;
     if (oni3GameExeFileHandler == INVALID_HANDLE_VALUE) {
-        TCHAR sbuffer[256];
-        StringCchPrintf(sbuffer, 256, TEXT("Cannot Find the Game [%s]"), oni3GameExePath);
-        MessageBox(NULL, sbuffer, TEXT("Error"), MB_ICONERROR);
-    } else {
-        oni3ProcessCreated = CreateProcess(oni3GameExePath, NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, oni3GamePath, &oni3GameSI, &oni3GamePI);
-        //WaitForSingleObject(oni3GamePI.hProcess, INFINITE);
+        !showWinApiError(hWnd, MB_OK, TEXT("Error opening game executable"));
+        return FALSE;
     }
 
-    return 0;
+    oni3ProcessCreated = CreateProcess(oni3GameExePath, NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, oni3GamePath, &oni3GameSI, &oni3GamePI);
+    //WaitForSingleObject(oni3GamePI.hProcess, INFINITE);
+
+    return TRUE;
 }
 
 /// <summary>
@@ -147,26 +130,22 @@ BOOL OriLauncher::lookForRegKey(LPCTSTR lpSubKey)
 /// </summary>
 OriLauncher::~OriLauncher()
 {
-    int status = 0;
-    BOOL handleError = FALSE;
-
-    do {
-        if (oni3GamePI.hProcess != NULL) {
-            handleError = (CloseHandle(oni3GamePI.hProcess) == TRUE) ? TRUE : handleError;
+    if (oni3GamePI.hProcess != NULL) {
+        if (!CloseHandle(oni3GamePI.hProcess))
+            showWinApiError(NULL, MB_OK, TEXT("CloseHandle ProcessInfo hProcess Error"));
+        else
             oni3GamePI.hProcess = NULL;
-        }
-        if (oni3GamePI.hThread != NULL) {
-            handleError = (CloseHandle(oni3GamePI.hThread) == TRUE) ? TRUE : handleError;
+    }
+    if (oni3GamePI.hThread != NULL) {
+        if (!CloseHandle(oni3GamePI.hThread))
+            showWinApiError(NULL, MB_OK, TEXT("CloseHandle ProcessInfo hThread Error"));
+        else
             oni3GamePI.hThread = NULL;
-        }
-        if (oni3GameExeFileHandler != NULL) {
-            handleError = (CloseHandle(oni3GameExeFileHandler) == TRUE) ? TRUE : handleError;
+    }
+    if (oni3GameExeFileHandler != NULL) {
+        if (!CloseHandle(oni3GameExeFileHandler))
+            showWinApiError(NULL, MB_OK, TEXT("CloseHandle Game Exe File Error"));
+        else
             oni3GameExeFileHandler = NULL;
-        }
-        if (handleError)
-            status = showWinApiError(hWnd, MB_RETRYCANCEL, TEXT("Error closing handle"));
-    } while (status == IDRETRY);
-
-    if (status == IDCANCEL)
-        MessageBox(hWnd, TEXT("An error occured while closing handles"), TEXT("Error"), MB_ICONERROR | MB_OK);
+    }
 }

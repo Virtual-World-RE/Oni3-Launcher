@@ -31,11 +31,10 @@ private:
     BOOL    setCurrentHKEY(HKEY hKeyId);
     BOOL    getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData);
     BOOL    lookForRegKey(LPCTSTR lpSubKey);
-    BOOL    checkGamePath();
+    BOOL    checkGamePaths();
 public:
             OriLauncher();
-    VOID    setOriginHandler(HWND hWnd);
-    BOOL    pseudoWinMain();
+    BOOL    pseudoWinMain(HWND hWnd);
     BOOL    checkError();
             ~OriLauncher();
 };
