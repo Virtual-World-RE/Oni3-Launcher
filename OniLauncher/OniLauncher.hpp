@@ -71,6 +71,14 @@ LRESULT          wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 LPUINT           getNumbers(LPTSTR str);
 
+enum class DISPLAYMODE : UINT
+{
+    NONE,
+    BORDERLESS,
+    FULLSCREEN,
+    WINDOWED,
+};
+
 class OniLauncher
 {
 private:
@@ -80,6 +88,7 @@ private:
     UINT        currentMonitor = 0;
     RESOLUTION  currentResolution = { 0, 0 };
     UINT        currentRefreshRate = 0;
+    DISPLAYMODE currentDisplayMode = DISPLAYMODE::NONE;
     BOOL        debugEnabled = FALSE;
 
     HWND        hWnd = NULL;
@@ -106,6 +115,8 @@ public:
     UINT        fetchCurrentMonitor();
     RESOLUTION  fetchCurrentResolution();
     UINT        fetchCurrentRefreshRate();
+    DISPLAYMODE fetchCurrentDisplayMode();
+    BOOL        fetchDebugModeEnabled();
                 
     VOID        resetMonitor();
     VOID        resetResolution();
@@ -118,7 +129,9 @@ public:
     VOID        fillMonitorComboBox();
     VOID        fillResolutionComboBox();
     VOID        fillRefreshComboBox();
+    VOID        fillDisplayModeComboBox();
                 
+    BOOL        checkSettings();
     LRESULT     saveConfigFile();
 
     ~OniLauncher();

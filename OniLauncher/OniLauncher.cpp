@@ -79,7 +79,7 @@ BOOL MyRegisterClass(HINSTANCE hInstance)
 
     if (!RegisterClassEx(&wcex))
     {
-        MessageBox(NULL, TEXT("Call to RegisterClassEx failed!"), TEXT("Class Registration Error"), MB_ICONERROR);
+        showWinApiError(NULL, MB_OK, TEXT("Class Registration Error"));
         return FALSE;
     }
 
@@ -102,11 +102,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     ::hInst = hInstance; // Stocke le handle d'instance dans la variable globale
 
-    AdjustWindowRect(&rect, WINDOWS_STYLE, true);
+    AdjustWindowRect(&rect, WINDOWS_STYLE, TRUE);
     hWnd = CreateWindow(szWindowClass, szTitle, WINDOWS_STYLE, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, hInstance, NULL);
 
     if (!hWnd) {
-        MessageBox(NULL, TEXT("Call to CreateWindow failed!"), TEXT("Error"), MB_ICONERROR);
+        showWinApiError(NULL, MB_OK, TEXT("CreateWindow Error"));
         return FALSE;
     }
 
@@ -116,30 +116,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     return TRUE;
 }
 
-bool CALLBACK SetFont(HWND child, LPARAM font)
+BOOL CALLBACK SetFont(HWND child, LPARAM font)
 {
-    SendMessage(child, WM_SETFONT, font, true);
-    return true;
+    SendMessage(child, WM_SETFONT, font, TRUE);
+    return TRUE;
 }
 
 LRESULT wndProcCreate(HWND hWnd)
 {
     TCHAR loadedString[MAX_SMALL_STRING];
-    HFONT defaultFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
-    HWND monitorComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 150, 240, 200, hWnd, (HMENU)ID_MONITOR, hInst, NULL);
-    HWND resolutionComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 200, 130, 200, hWnd, (HMENU)ID_RESOLUTION, hInst, NULL);
-    HWND refreshRateComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 140, 200, 105, 200, hWnd, (HMENU)ID_REFRESH_RATE, hInst, NULL);
-    HWND displayModeComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_DISPLAY_MODE, hInst, NULL);
+    HWND monitorComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 130, 240, 200, hWnd, (HMENU)ID_MONITOR, hInst, NULL);
+    HWND resolutionComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 180, 130, 200, hWnd, (HMENU)ID_RESOLUTION, hInst, NULL);
+    HWND refreshRateComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 140, 180, 105, 200, hWnd, (HMENU)ID_REFRESH_RATE, hInst, NULL);
+    HWND displayModeComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 230, 220, 200, hWnd, (HMENU)ID_DISPLAY_MODE, hInst, NULL);
     //HWND fpsComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_FRAME_PER_SECONDS, hInst, NULL);
 
     LoadString(::hInst, IDS_MONITOR_DESC, loadedString, MAX_SMALL_STRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 130, 240, 16, hWnd, NULL, hInst, NULL);
+    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 110, 240, 16, hWnd, NULL, hInst, NULL);
     LoadString(::hInst, IDS_RESOLUTION_DESC, loadedString, MAX_SMALL_STRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 180, 130, 16, hWnd, NULL, hInst, NULL);
+    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 160, 130, 16, hWnd, NULL, hInst, NULL);
     LoadString(::hInst, IDS_REFRESH_DESC, loadedString, MAX_SMALL_STRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 140, 180, 105, 16, hWnd, NULL, hInst, NULL);
+    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 140, 160, 105, 16, hWnd, NULL, hInst, NULL);
     LoadString(::hInst, IDS_DISPLAY_MODE_DESC, loadedString, MAX_SMALL_STRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 230, 240, 16, hWnd, NULL, hInst, NULL);
+    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 210, 240, 16, hWnd, NULL, hInst, NULL);
 
     LoadString(::hInst, IDS_DEBUG, loadedString, MAX_SMALL_STRING);
     CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 295, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
@@ -152,37 +151,44 @@ LRESULT wndProcCreate(HWND hWnd)
 
     oniLauncher.setHandlers(hWnd, monitorComboBox, resolutionComboBox, refreshRateComboBox, displayModeComboBox);
     oniLauncher.fillMonitorComboBox();
+    oniLauncher.fillDisplayModeComboBox();
 
     return 0;
 }
 
 LRESULT wndProcCommandScreenSettings(HWND hWnd, UINT wmId, UINT iCode)
 {
-    if (iCode == CBN_SELENDOK) {
-        switch (wmId) {
-        case ID_MONITOR:
-        {
-            oniLauncher.resetResolution();
-            oniLauncher.resetRefreshRate();
+    if (iCode != CBN_SELENDOK)
+        return 0;
 
-            oniLauncher.fetchCurrentMonitor();
-            oniLauncher.fillResolutionComboBox();
-            break;
-        }
-        case ID_RESOLUTION:
-        {
-            oniLauncher.resetRefreshRate();
+    switch (wmId) {
+    case ID_MONITOR:
+    {
+        oniLauncher.resetResolution();
+        oniLauncher.resetRefreshRate();
 
-            oniLauncher.fetchCurrentResolution();
-            oniLauncher.fillRefreshComboBox();
-            break;
-        }
-        case ID_REFRESH_RATE:
-        {
-            oniLauncher.fetchCurrentRefreshRate();
-            break;
-        }
-        }
+        oniLauncher.fetchCurrentMonitor();
+        oniLauncher.fillResolutionComboBox();
+        return 0;
+    }
+    case ID_RESOLUTION:
+    {
+        oniLauncher.resetRefreshRate();
+
+        oniLauncher.fetchCurrentResolution();
+        oniLauncher.fillRefreshComboBox();
+        return 0;
+    }
+    case ID_REFRESH_RATE:
+    {
+        oniLauncher.fetchCurrentRefreshRate();
+        return 0;
+    }
+    case ID_DISPLAY_MODE:
+    {
+        oniLauncher.fetchCurrentDisplayMode();
+        return 0;
+    }
     }
 
     return 0;
@@ -190,15 +196,31 @@ LRESULT wndProcCommandScreenSettings(HWND hWnd, UINT wmId, UINT iCode)
 
 LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
 {
-    oniLauncher.saveConfigFile();
+    if (iCode != BN_CLICKED)
+        return 0;
 
-    /*switch (wmId) {
+    if (!oniLauncher.checkSettings())
+        return 0;
+
+    switch (wmId) {
+    case ID_DEBUG:
+    {
+        oniLauncher.fetchDebugModeEnabled();
+        return 0;
+    }
     case ID_PLAY:
     {
-        //pseudoWinMain(hWnd);
-        break;
+        oniLauncher.saveConfigFile();
+        //oriLauncher.pseudoWinMain(hWnd);
+        PostQuitMessage(0);
+        return 0;
     }
-    }*/
+    case ID_SAVE:
+    {
+        oniLauncher.saveConfigFile();
+        return 0;
+    }
+    }
 
     return 0;
 }
@@ -216,10 +238,12 @@ LRESULT wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case IDM_EXIT:
         return !DestroyWindow(hWnd);
+    case ID_DISPLAY_MODE:
     case ID_REFRESH_RATE:
     case ID_RESOLUTION:
     case ID_MONITOR:
         return wndProcCommandScreenSettings(hWnd, wmId, iCode);
+    case ID_DEBUG:
     case ID_SAVE:
     case ID_PLAY:
         return wndProcCommandButtonAction(hWnd, wmId, iCode);
@@ -266,7 +290,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return wndProcCommand(hWnd, message, wParam, lParam);
     case WM_DESTROY:
         PostQuitMessage(0);
-        break;
+        return 0;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -440,7 +464,7 @@ UINT OniLauncher::fetchCurrentMonitor()
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Current monitor is %d\n"), currentMonitor);
+    _stprintf_s(debugBuffer, TEXT("Selected monitor is %d\n"), currentMonitor);
     OutputDebugString(debugBuffer);
     #endif
 
@@ -460,7 +484,7 @@ RESOLUTION OniLauncher::fetchCurrentResolution()
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Current resolution set to %d x %d\n"), currentResolution.width, currentResolution.height);
+    _stprintf_s(debugBuffer, TEXT("Selected resolution is %d x %d\n"), currentResolution.width, currentResolution.height);
     OutputDebugString(debugBuffer);
     #endif
 
@@ -479,23 +503,63 @@ UINT OniLauncher::fetchCurrentRefreshRate()
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Current refresh rate is %d\n"), currentRefreshRate);
+    _stprintf_s(debugBuffer, TEXT("Selected refresh rate is %d\n"), currentRefreshRate);
     OutputDebugString(debugBuffer);
     #endif
 
     return currentRefreshRate;
 }
 
+DISPLAYMODE OniLauncher::fetchCurrentDisplayMode()
+{
+    TCHAR lpText[256];
+    TCHAR loadedString[MAX_SMALL_STRING];
+    LPUINT numbers = NULL;
+
+    GetWindowText(displayModeComboBox, lpText, 256);
+    
+    LoadString(::hInst, IDS_DISPLAY_MODE_BORD, loadedString, MAX_SMALL_STRING);
+    if (!_tcscmp(lpText, loadedString))
+        currentDisplayMode = DISPLAYMODE::BORDERLESS;
+    LoadString(::hInst, IDS_DISPLAY_MODE_FULL, loadedString, MAX_SMALL_STRING);
+    if (!_tcscmp(lpText, loadedString))
+        currentDisplayMode = DISPLAYMODE::FULLSCREEN;
+    LoadString(::hInst, IDS_DISPLAY_MODE_WIND, loadedString, MAX_SMALL_STRING);
+    if (!_tcscmp(lpText, loadedString))
+        currentDisplayMode = DISPLAYMODE::WINDOWED;
+
+    #ifdef _DEBUG
+    TCHAR debugBuffer[256];
+    _stprintf_s(debugBuffer, TEXT("Selected display mode is %s\n"), currentDisplayMode == DISPLAYMODE::BORDERLESS ? TEXT("Borderless") : currentDisplayMode == DISPLAYMODE::FULLSCREEN ? TEXT("Fullscreen") : currentDisplayMode == DISPLAYMODE::WINDOWED ? TEXT("Windowed") : TEXT("Unknown"));
+    OutputDebugString(debugBuffer);
+    #endif
+
+    return currentDisplayMode;
+}
+
+BOOL OniLauncher::fetchDebugModeEnabled()
+{
+    debugEnabled = IsDlgButtonChecked(hWnd, ID_DEBUG) == BST_CHECKED;
+
+    #ifdef _DEBUG
+    TCHAR debugBuffer[256];
+    _stprintf_s(debugBuffer, TEXT("Debug mode %s\n"), debugEnabled ? TEXT("enabled") : TEXT("disabled"));
+    OutputDebugString(debugBuffer);
+    #endif
+
+    return debugEnabled;
+}
+
 VOID OniLauncher::resetMonitor()
 {
-    EnableWindow(monitorComboBox, false);
+    EnableWindow(monitorComboBox, FALSE);
     SendMessage(monitorComboBox, CB_RESETCONTENT, NULL, NULL);
     currentMonitor = 0;
 }
 
 VOID OniLauncher::resetResolution()
 {
-    EnableWindow(resolutionComboBox, false);
+    EnableWindow(resolutionComboBox, FALSE);
     SendMessage(resolutionComboBox, CB_RESETCONTENT, NULL, NULL);
     currentResolution.width = 0;
     currentResolution.height = 0;
@@ -503,7 +567,7 @@ VOID OniLauncher::resetResolution()
 
 VOID OniLauncher::resetRefreshRate()
 {
-    EnableWindow(refreshRateComboBox, false);
+    EnableWindow(refreshRateComboBox, FALSE);
     SendMessage(refreshRateComboBox, CB_RESETCONTENT, NULL, NULL);
     currentRefreshRate = 0;
 }
@@ -569,33 +633,58 @@ VOID OniLauncher::fillRefreshComboBox()
     EnableWindow(refreshRateComboBox, TRUE);
 }
 
+VOID OniLauncher::fillDisplayModeComboBox()
+{
+    TCHAR loadedString[MAX_SMALL_STRING];
+
+    LoadString(::hInst, IDS_DISPLAY_MODE_BORD, loadedString, MAX_SMALL_STRING);
+    SendMessage(displayModeComboBox, CB_ADDSTRING, 0, (LPARAM)loadedString);
+    LoadString(::hInst, IDS_DISPLAY_MODE_FULL, loadedString, MAX_SMALL_STRING);
+    SendMessage(displayModeComboBox, CB_ADDSTRING, 0, (LPARAM)loadedString);
+    LoadString(::hInst, IDS_DISPLAY_MODE_WIND, loadedString, MAX_SMALL_STRING);
+    SendMessage(displayModeComboBox, CB_ADDSTRING, 0, (LPARAM)loadedString);
+
+    EnableWindow(displayModeComboBox, TRUE);
+}
+
+BOOL OniLauncher::checkSettings()
+{
+    TCHAR loadedString[2][MAX_SMALL_STRING];
+
+    if (currentMonitor == 0) {
+        LoadString(::hInst, IDS_NO_MONITOR_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_MONITOR_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+        return FALSE;
+    }
+    if (currentResolution.width == 0 || currentResolution.height == 0) {
+        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+        return FALSE;
+    }
+    if (currentRefreshRate == 0) {
+        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+        return FALSE;
+    }
+    if (currentDisplayMode == DISPLAYMODE::NONE) {
+        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+        return FALSE;
+    }
+    return TRUE;
+}
+
 LRESULT OniLauncher::saveConfigFile()
 {
-    debugEnabled = IsDlgButtonChecked(hWnd, ID_DEBUG) == BST_CHECKED;
-
     #ifdef _DEBUG
-    TCHAR message[128];
-
-    OutputDebugString(TEXT("INFO: Save button pressed\n\n"));
-
-    _stprintf_s(message, TEXT("Monitor: %u\n"), currentMonitor);
-    OutputDebugString(message);
-    _stprintf_s(message, TEXT("Resolution: %u x %u\n"), currentResolution.width, currentResolution.height);
-    OutputDebugString(message);
-    _stprintf_s(message, TEXT("Refresh rate: %u\n"), currentRefreshRate);
-    OutputDebugString(message);
-    _stprintf_s(message, TEXT("Debug: %s\n"), debugEnabled ? TEXT("true") : TEXT("false"));
-    OutputDebugString(message);
+    OutputDebugString(TEXT("INFO: Settings are being saved\n\n"));
     #endif
 
-    if (currentMonitor == 0)
-        return MessageBox(hWnd, TEXT("You should choose a monitor to continue."), TEXT("No monitor selected !"), MB_OK | MB_ICONERROR);
-    if (currentResolution.width == 0 || currentResolution.height == 0)
-        return MessageBox(hWnd, TEXT("You should choose a resolution to continue."), TEXT("No resolution selected !"), MB_OK | MB_ICONERROR);
-    if (currentRefreshRate == 0)
-        return MessageBox(hWnd, TEXT("You should choose a refresh rate to continue."), TEXT("No refresh rate selected !"), MB_OK | MB_ICONERROR);
-
-    json settings = json{ {"monitor", currentMonitor}, {"resolution", {{"width", currentResolution.width}, {"height", currentResolution.height}}}, {"refreshRate", currentRefreshRate}, {"debugEnabled", debugEnabled}};
+    json settings = json{ {"monitor", currentMonitor}, {"resolution", {{"width", currentResolution.width}, {"height", currentResolution.height}}}, {"refreshRate", currentRefreshRate}, {"fullscreen", currentDisplayMode == DISPLAYMODE::FULLSCREEN ? true : false}, {"borderless", currentDisplayMode == DISPLAYMODE::BORDERLESS ? true : false}, {"debugEnabled", debugEnabled ? true : false}};
 
     OutputDebugStringA(settings.dump(4).c_str());
 

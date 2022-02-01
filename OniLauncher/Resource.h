@@ -29,14 +29,21 @@
 #define IDS_RESOLUTION_DESC             604
 #define IDS_REFRESH_DESC                605
 #define IDS_DISPLAY_MODE_DESC           606
-#define IDS_DEBUG                       607
-#define IDS_SAVE                        608
-#define IDS_PLAY                        609
+#define IDS_DISPLAY_MODE_BORD           607
+#define IDS_DISPLAY_MODE_FULL           608
+#define IDS_DISPLAY_MODE_WIND           609
+#define IDS_DEBUG                       610
+#define IDS_SAVE                        611
+#define IDS_PLAY                        612
 
-
-//#define IDC_MYICON                      2
-//#define IDR_MAINFRAME                   116
-//#define IDD_ONILAUNCHER_DIALOG          500
+#define IDS_NO_MONITOR_SELECTED_TITLE       613
+#define IDS_NO_MONITOR_SELECTED_MSG         614
+#define IDS_NO_RESOLUTION_SELECTED_TITLE    615
+#define IDS_NO_RESOLUTION_SELECTED_MSG      616
+#define IDS_NO_REFRESH_RATE_SELECTED_TITLE  617
+#define IDS_NO_REFRESH_RATE_SELECTED_MSG    618
+#define IDS_NO_DISPLAY_MODE_SELECTED_TITLE  619
+#define IDS_NO_DISPLAY_MODE_SELECTED_MSG    620
 
 
 // Next default values for new objects
