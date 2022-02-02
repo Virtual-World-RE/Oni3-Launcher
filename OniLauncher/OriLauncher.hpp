@@ -15,7 +15,7 @@ class OriLauncher
 {
 private:
     // Default variables
-    HKEY    hKey =                      NULL;
+    HKEY    currentHKey =               NULL;
     HWND    hWnd =                      NULL;
     BOOL    oni3ProcessCreated =        FALSE;
     DWORD   oni3GamePathLength =        0UL;
@@ -35,6 +35,5 @@ private:
 public:
             OriLauncher();
     BOOL    pseudoWinMain(HWND hWnd);
-    BOOL    checkError();
             ~OriLauncher();
 };

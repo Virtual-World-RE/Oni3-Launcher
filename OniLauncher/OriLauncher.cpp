@@ -65,10 +65,10 @@ BOOL OriLauncher::pseudoWinMain(HWND hWnd)
 /// <returns></returns>
 BOOL OriLauncher::resetGlobalHKEY()
 {
-    if (hKey && hKey != HKEY_CLASSES_ROOT && hKey != HKEY_CURRENT_CONFIG && hKey != HKEY_CURRENT_USER && hKey != HKEY_LOCAL_MACHINE && hKey != HKEY_USERS)
-        RegCloseKey(hKey);
+    if (currentHKey && currentHKey != HKEY_CLASSES_ROOT && currentHKey != HKEY_CURRENT_CONFIG && currentHKey != HKEY_CURRENT_USER && currentHKey != HKEY_LOCAL_MACHINE && currentHKey != HKEY_USERS)
+        RegCloseKey(currentHKey);
 
-    hKey = 0;
+    currentHKey = 0;
     return FALSE;
 }
 
@@ -100,8 +100,8 @@ BOOL OriLauncher::getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbDat
     setCurrentHKEY(HKEY_LOCAL_MACHINE);
     if (!lookForRegKey(TEXT(R"(SOFTWARE\CAPCOM\ONIMUSHA3 PC\1.00.000)")))
         return FALSE;
-    if (hKey && lpValue && lpData)
-        result = RegGetValue(hKey, NULL, lpValue, RRF_RT_REG_SZ, NULL, lpData, lpcbData) == ERROR_SUCCESS;
+    if (currentHKey && lpValue && lpData)
+        result = RegGetValue(currentHKey, NULL, lpValue, RRF_RT_REG_SZ, NULL, lpData, lpcbData) == ERROR_SUCCESS;
     setCurrentHKEY(0);
 
     return result;
@@ -116,11 +116,11 @@ BOOL OriLauncher::lookForRegKey(LPCTSTR lpSubKey)
 {
     HKEY phkResult = 0;
 
-    if (RegOpenKeyEx(hKey, lpSubKey, 0, KEY_READ | KEY_WOW64_32KEY, &phkResult) != ERROR_SUCCESS)
+    if (RegOpenKeyEx(currentHKey, lpSubKey, 0, KEY_READ | KEY_WOW64_32KEY, &phkResult) != ERROR_SUCCESS)
         return FALSE;
 
     resetGlobalHKEY();
-    hKey = phkResult;
+    currentHKey = phkResult;
 
     return TRUE;
 }
