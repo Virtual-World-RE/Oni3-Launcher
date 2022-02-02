@@ -593,7 +593,7 @@ VOID OniLauncher::fillMonitorComboBox()
     TCHAR monitorStr[MAX_SMALL_STRING];
     LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_SMALL_STRING);
     
-    for (UINT i = 0; oniLauncher.monitorDisplayModes[i]; i++) {
+    for (UINT i = 0; monitorDisplayModes[i]; i++) {
         _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%s %d"), monitorStr, i);
         SendMessage(monitorComboBox, CB_ADDSTRING, 0, (LPARAM)buffer);
     }
