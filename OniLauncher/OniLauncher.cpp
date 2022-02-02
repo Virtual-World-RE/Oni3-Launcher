@@ -79,7 +79,7 @@ BOOL MyRegisterClass(HINSTANCE hInstance)
 
     if (!RegisterClassEx(&wcex))
     {
-        showWinApiError(NULL, MB_OK, TEXT("Class Registration Error"));
+        showWinApiErrorMB(NULL, MB_OK, TEXT("Class Registration Error"));
         return FALSE;
     }
 
@@ -106,7 +106,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     hWnd = CreateWindow(szWindowClass, szTitle, WINDOWS_STYLE, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, hInstance, NULL);
 
     if (!hWnd) {
-        showWinApiError(NULL, MB_OK, TEXT("CreateWindow Error"));
+        showWinApiErrorMB(NULL, MB_OK, TEXT("CreateWindow Error"));
         return FALSE;
     }
 

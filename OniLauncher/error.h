@@ -1,4 +1,6 @@
 #pragma once
 #include "pch.h"
 
-int showWinApiError(HWND hWnd = NULL, DWORD messageBoxFlags = MB_OK, LPCTSTR messageBoxTitle = TEXT("Error"));
+#define MESSAGE_FLAGS FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS
+
+INT showWinApiErrorMB(HWND hWnd = NULL, DWORD messageBoxFlags = MB_OK, LPCTSTR messageBoxTitle = TEXT("Error"));
