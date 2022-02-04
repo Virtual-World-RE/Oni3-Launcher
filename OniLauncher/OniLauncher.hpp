@@ -39,11 +39,6 @@
 #define DEFAULT_STYLE WS_CHILD | WS_VISIBLE
 #define DROPDOWN_COMBO_BOX DEFAULT_STYLE | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-#ifdef UNICODE
-  #define WINMAIN wWinMain
-#else
-  #define WINMAIN WinMain
-#endif
 
 using json = nlohmann::json;
 
@@ -59,9 +54,54 @@ typedef struct
     UINT height;
 } RESOLUTION;
 
+#ifdef UNICODE
+  #define WINMAIN wWinMain
+#else
+  #define WINMAIN WinMain
+#endif
+
+ /// <summary>
+ /// The Application Entry Point
+ /// </summary>
+ /// <param name="hInstance">is something called a "handle to an instance" or "handle to a module". The operating system uses this value to identify the executable (EXE) when it is loaded in memory. The instance handle is needed for certain Windows functions�for example, to load icons or bitmaps.</param>
+ /// <param name="hPrevInstance">has no meaning. It was used in 16-bit Windows, but is now always zero.</param>
+ /// <param name="pCmdLine">contains the command-line arguments as a Unicode string.</param>
+ /// <param name="nCmdShow">is a flag that says whether the main application window will be minimized, maximized, or shown normally.</param>
+ /// <returns>The return value is not used by the operating system, but you can use the return value to convey a status code to some other program that you write.</returns>
+int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PTSTR pCmdLine, _In_ int nCmdShow);
+
 // Prototype of OniLauncher.cpp windows related functions
-BOOL             MyRegisterClass(HINSTANCE hInstance);
+
+/// <summary>
+///   Register Main Window Class
+/// </summary>
+/// <param name="hInstance"></param>
+/// <returns>
+///   <para>FALSE if failed.</para>
+///   <para>TRUE if succeed.</para>
+/// </returns>
+BOOL             MainWindowRegisterClass(HINSTANCE hInstance);
+
+/// <summary>
+///   <para>Create a main window.</para>
+///   <para>Initialize global hInst from hInstance.</para>
+/// </summary>
+/// <param name="hInstance"></param>
+/// <param name="nCmdShow">is a flag that says whether the main application window will be minimized, maximized, or shown normally.</param>
+/// <returns>
+///   <para>FALSE if failed.</para>
+///   <para>TRUE if succeed.</para>
+/// </returns>
 BOOL             InitInstance(HINSTANCE, int);
+
+/// <summary>
+///   <para>Set a given font for a given handler.</para>
+///   <para>This has to be used with EnumChildWindows.</para>
+/// </summary>
+/// <param name="child">: Handler to child window.</param>
+/// <param name="font">: Font to be used.</param>
+/// <returns>Always returns TRUE.</returns>
+BOOL    CALLBACK SetFont(HWND child, LPARAM font);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
@@ -85,6 +125,8 @@ private:
     BOOL        configured = FALSE;
     LPDIRECT3D9 d3d = NULL;
 
+    MONITORDISPLAYMODES **monitorDisplayModes = NULL;
+    
     UINT        currentMonitor = 0;
     RESOLUTION  currentResolution = { 0, 0 };
     UINT        currentRefreshRate = 0;
@@ -106,8 +148,6 @@ private:
     VOID        destroyMonitorDisplayModes();
     VOID        destroyD3D();
 public:
-    MONITORDISPLAYMODES **monitorDisplayModes = NULL;
-
     OniLauncher();
 
     VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox);

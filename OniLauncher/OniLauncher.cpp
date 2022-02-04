@@ -17,9 +17,6 @@ TCHAR szWindowClass[MAX_LOADSTRING];            // Main class name.
 OniLauncher oniLauncher;
 OriLauncher oriLauncher;
 
-//
-// Application main function
-//
 int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PTSTR pCmdLine, _In_ int nCmdShow)
 {
     MSG msg;
@@ -55,11 +52,6 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     return (int) msg.wParam;
 }
 
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  OBJECTIF : Register Windows class.
-//
 BOOL MainWindowRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEX wcex;
@@ -86,11 +78,6 @@ BOOL MainWindowRegisterClass(HINSTANCE hInstance)
     return TRUE;
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   OBJECTIF : Save instance handle and create a main window.
-//
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     RECT rect;
