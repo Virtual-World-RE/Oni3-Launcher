@@ -49,7 +49,7 @@ BOOL OriLauncher::pseudoWinMain(HWND hWnd)
 
     this->hWnd = hWnd;
     if (oni3GameExeFileHandler == INVALID_HANDLE_VALUE) {
-        showWinApiErrorMB(hWnd, MB_OK, TEXT("Error opening game executable"));
+        showWinApiErrorMB(hWnd, TEXT("Error opening game executable"));
         return FALSE;
     }
 
@@ -132,19 +132,19 @@ OriLauncher::~OriLauncher()
 {
     if (oni3GamePI.hProcess != NULL) {
         if (!CloseHandle(oni3GamePI.hProcess))
-            showWinApiErrorMB(NULL, MB_OK, TEXT("CloseHandle ProcessInfo hProcess Error"));
+            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hProcess Error"));
         else
             oni3GamePI.hProcess = NULL;
     }
     if (oni3GamePI.hThread != NULL) {
         if (!CloseHandle(oni3GamePI.hThread))
-            showWinApiErrorMB(NULL, MB_OK, TEXT("CloseHandle ProcessInfo hThread Error"));
+            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hThread Error"));
         else
             oni3GamePI.hThread = NULL;
     }
     if (oni3GameExeFileHandler != NULL) {
         if (!CloseHandle(oni3GameExeFileHandler))
-            showWinApiErrorMB(NULL, MB_OK, TEXT("CloseHandle Game Exe File Error"));
+            showWinApiErrorMB(NULL, TEXT("CloseHandle Game Exe File Error"));
         else
             oni3GameExeFileHandler = NULL;
     }
