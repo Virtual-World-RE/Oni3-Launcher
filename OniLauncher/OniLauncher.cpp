@@ -299,53 +299,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-/*LPUINT getNumbers(LPTSTR str)
-{
-    INT occurrences = 0;
-    INT j = 0;
-    LPUINT realloced = FALSE;
-    BOOL trigger = FALSE;
-    LPUINT result = NULL;
-    LPTSTR nbrBuffer = (LPTSTR)calloc(_tcslen(str), sizeof(TCHAR));
-
-    if (nbrBuffer == NULL)
-        return NULL;
-
-    for (UINT i = 0; str[i]; i++) {
-        if (_istdigit(str[i])) {
-            nbrBuffer[j++] = str[i];
-            trigger = TRUE;
-        } else if (trigger) {
-            trigger = FALSE;
-            ++occurrences;
-            realloced = (LPUINT)realloc(result, sizeof(INT) * occurrences);
-            if (realloced == NULL) {
-                if (result) free(result);
-                return NULL;
-            } else
-                result = realloced;
-            result[occurrences - 1] = _tstoi(nbrBuffer);
-            SecureZeroMemory(nbrBuffer, sizeof(TCHAR) * j);
-            j = 0;
-        }
-    }
-
-    if (trigger) {
-        ++occurrences;
-        realloced = (LPUINT)realloc(result, sizeof(INT) * occurrences);
-        if (realloced == NULL) {
-            if (result) free(result);
-            return NULL;
-        } else
-            result = realloced;
-        result[occurrences - 1] = (UINT)_tstoi(nbrBuffer);
-    }
-
-    free(nbrBuffer);
-
-    return result;
-}*/
-
 BOOL OniLauncher::jsonLoadConfig()
 {
     return TRUE;
