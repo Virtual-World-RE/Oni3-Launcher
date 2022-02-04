@@ -621,7 +621,7 @@ BOOL OniLauncher::checkSettings()
 {
     TCHAR loadedString[2][MAX_SMALL_STRING];
 
-    if (currentMonitor == 0) {
+    if (currentMonitor < 0) {
         LoadString(::hInst, IDS_NO_MONITOR_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
         LoadString(::hInst, IDS_NO_MONITOR_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
