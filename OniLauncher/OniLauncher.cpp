@@ -33,7 +33,7 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     LoadString(hInstance, IDS_ONILAUNCHER, szWindowClass, MAX_LOADSTRING);
 
     // Registering windows class
-    if (!MyRegisterClass(hInstance))
+    if (!MainWindowRegisterClass(hInstance))
         return FALSE;
 
     // Initializing our app
@@ -60,7 +60,7 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 //
 //  OBJECTIF : Register Windows class.
 //
-BOOL MyRegisterClass(HINSTANCE hInstance)
+BOOL MainWindowRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEX wcex;
 
