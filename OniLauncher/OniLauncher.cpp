@@ -419,7 +419,7 @@ BOOL OniLauncher::fillMonitorComboBox()
     LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_SMALL_STRING);
 
     for (UINT i = 0; monitorDisplayModes[i]; i++) {
-        _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%s %d"), monitorStr, i + 1);
+        _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%s %d"), monitorStr, i);
         comboBoxIndex = ComboBox_AddString(monitorComboBox, buffer);
         if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(monitorComboBox, comboBoxIndex, (LPARAM)i) == CB_ERR)
             return FALSE;
