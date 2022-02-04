@@ -44,7 +44,7 @@ using json = nlohmann::json;
 
 typedef struct MONITORDISPLAYMODES
 {
-    D3DDISPLAYMODE displayMode;
+    D3DDISPLAYMODE d3dDisplayMode;
     struct MONITORDISPLAYMODES *next;
 } MONITORDISPLAYMODES;
 
@@ -63,7 +63,7 @@ typedef struct
  /// <summary>
  /// The Application Entry Point
  /// </summary>
- /// <param name="hInstance">is something called a "handle to an instance" or "handle to a module". The operating system uses this value to identify the executable (EXE) when it is loaded in memory. The instance handle is needed for certain Windows functionsï¿½for example, to load icons or bitmaps.</param>
+ /// <param name="hInstance">is something called a "handle to an instance" or "handle to a module". The operating system uses this value to identify the executable (EXE) when it is loaded in memory. The instance handle is needed for certain Windows functions—for example, to load icons or bitmaps.</param>
  /// <param name="hPrevInstance">has no meaning. It was used in 16-bit Windows, but is now always zero.</param>
  /// <param name="pCmdLine">contains the command-line arguments as a Unicode string.</param>
  /// <param name="nCmdShow">is a flag that says whether the main application window will be minimized, maximized, or shown normally.</param>
@@ -102,6 +102,21 @@ BOOL             InitInstance(HINSTANCE, int);
 /// <param name="font">: Font to be used.</param>
 /// <returns>Always returns TRUE.</returns>
 BOOL    CALLBACK SetFont(HWND child, LPARAM font);
+
+/// <summary>
+///   Processes messages for the main window.
+/// </summary>
+/// <param name="hWnd"></param>
+/// <param name="message"></param>
+/// <param name="wParam"></param>
+/// <param name="lParam"></param>
+/// <remarks>
+///   Message can be one of the following one:
+///   <para>WM_COMMAND - Manages application menu.</para>
+///   <para>WM_PAINT - Draw the main window.</para>
+///   <para>WM_DESTROY - Send a message then returns.</para>
+/// </remarks>
+/// <returns></returns>
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
@@ -109,7 +124,7 @@ INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 LRESULT          wndProcCreate(HWND hWnd);
 LRESULT          wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-LPUINT           getNumbers(LPTSTR str);
+// LPUINT           getNumbers(LPTSTR str);
 
 enum class DISPLAYMODE : UINT
 {
@@ -122,7 +137,6 @@ enum class DISPLAYMODE : UINT
 class OniLauncher
 {
 private:
-    BOOL        configured = FALSE;
     LPDIRECT3D9 d3d = NULL;
 
     MONITORDISPLAYMODES **monitorDisplayModes = NULL;
@@ -130,7 +144,7 @@ private:
     UINT        currentMonitor = 0;
     RESOLUTION  currentResolution = { 0, 0 };
     UINT        currentRefreshRate = 0;
-    DISPLAYMODE currentDisplayMode = DISPLAYMODE::NONE;
+    DISPLAYMODE currentScreenMode = DISPLAYMODE::NONE;
     BOOL        debugEnabled = FALSE;
 
     HWND        hWnd = NULL;
@@ -138,6 +152,7 @@ private:
     HWND        resolutionComboBox = NULL;
     HWND        refreshRateComboBox = NULL;
     HWND        displayModeComboBox = NULL;
+    HWND        debugModeButton = NULL;
 
     VOID        initD3D();
     BOOL        initMonitorDisplayModes();
@@ -150,26 +165,22 @@ private:
 public:
     OniLauncher();
 
-    VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox);
-
-    UINT        fetchCurrentMonitor();
-    RESOLUTION  fetchCurrentResolution();
-    UINT        fetchCurrentRefreshRate();
-    DISPLAYMODE fetchCurrentDisplayMode();
-    BOOL        fetchDebugModeEnabled();
+    VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox, HWND debugModeButton);
                 
     VOID        resetMonitor();
     VOID        resetResolution();
     VOID        resetRefreshRate();
                 
-    UINT        getCurrentMonitor();
-    RESOLUTION  getCurrentResolution();
-    UINT        getCurrentRefreshRate();
-                
-    VOID        fillMonitorComboBox();
-    VOID        fillResolutionComboBox();
-    VOID        fillRefreshComboBox();
-    VOID        fillDisplayModeComboBox();
+    BOOL        fillMonitorComboBox();
+    BOOL        fillResolutionComboBox();
+    BOOL        fillRefreshComboBox();
+    BOOL        fillDisplayModeComboBox();
+
+    BOOL        fetchSelectedMonitor();
+    BOOL        fetchSelectedResolution();
+    BOOL        fetchSelectedRefreshRate();
+    BOOL        fetchSelectedDisplayMode();
+    BOOL        fetchSelectedDebugMode();
                 
     BOOL        checkSettings();
     LRESULT     saveConfigFile();

@@ -4,12 +4,12 @@
 //
 
 #pragma once
-
 #include "targetver.h"
 
 #define WIN32_LEAN_AND_MEAN             // Exclure les en-têtes Windows rarement utilisés
 // Windows Header Files
 #include <windows.h>
+#include <windowsx.h>
 
 // C RunTime Header Files
 #include <stdlib.h>
