@@ -28,7 +28,7 @@
 
 #define MAX_LOADSTRING 100
 #define MAX_STRERROR_S_LENGTH 94
-#define MAX_SMALL_STRING 100
+#define UINT_DIGITS 10
 
 #define MAIN_WINDOW_WIDTH 250
 #define MAIN_WINDOW_HEIGHT 400
@@ -37,8 +37,7 @@
 
 #define WINDOWS_STYLE WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX
 #define DEFAULT_STYLE WS_CHILD | WS_VISIBLE
-#define DROPDOWN_COMBO_BOX DEFAULT_STYLE | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-
+#define DROPDOWN_COMBO_BOX DEFAULT_STYLE | CBS_DROPDOWNLIST | WS_VSCROLL
 
 using json = nlohmann::json;
 
@@ -92,7 +91,7 @@ BOOL             MainWindowRegisterClass(HINSTANCE hInstance);
 ///   <para>FALSE if failed.</para>
 ///   <para>TRUE if succeed.</para>
 /// </returns>
-BOOL             InitInstance(HINSTANCE, int);
+BOOL             InitInstance(HINSTANCE hinstance, int nCmdShow);
 
 /// <summary>
 ///   <para>Set a given font for a given handler.</para>

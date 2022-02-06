@@ -25,21 +25,17 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(pCmdLine);
 
-    // Initializing our global string
     LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadString(hInstance, IDS_ONILAUNCHER, szWindowClass, MAX_LOADSTRING);
 
-    // Registering windows class
     if (!MainWindowRegisterClass(hInstance))
         return FALSE;
 
-    // Initializing our app
     if (!InitInstance(hInstance, nCmdShow))
         return FALSE;
 
     hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDS_ONILAUNCHER));
 
-    // Main message loop:
     while (GetMessage(&msg, NULL, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -48,7 +44,7 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
             DispatchMessage(&msg);
         }
     }
-
+    DestroyAcceleratorTable(hAccelTable);
     UnregisterClass(szWindowClass, hInstance);
 
     return (int) msg.wParam;
@@ -117,28 +113,28 @@ BOOL CALLBACK SetFont(HWND child, LPARAM font)
 
 LRESULT wndProcCreate(HWND hWnd)
 {
-    TCHAR loadedString[MAX_SMALL_STRING];
+    TCHAR loadedString[MAX_LOADSTRING];
     HWND debugModeButton;
-    HWND monitorComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 130, 240, 200, hWnd, (HMENU)ID_MONITOR, hInst, NULL);
-    HWND resolutionComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 180, 130, 200, hWnd, (HMENU)ID_RESOLUTION, hInst, NULL);
-    HWND refreshRateComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 140, 180, 105, 200, hWnd, (HMENU)ID_REFRESH_RATE, hInst, NULL);
-    HWND displayModeComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 230, 240, 200, hWnd, (HMENU)ID_DISPLAY_MODE, hInst, NULL);
+    HWND monitorComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 130, 240, 0, hWnd, (HMENU)ID_MONITOR, hInst, NULL);
+    HWND resolutionComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 180, 130, 0, hWnd, (HMENU)ID_RESOLUTION, hInst, NULL);
+    HWND refreshRateComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 140, 180, 105, 0, hWnd, (HMENU)ID_REFRESH_RATE, hInst, NULL);
+    HWND displayModeComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 230, 240, 0, hWnd, (HMENU)ID_DISPLAY_MODE, hInst, NULL);
     //HWND fpsComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_FRAME_PER_SECONDS, hInst, NULL);
 
-    LoadString(::hInst, IDS_MONITOR_DESC, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_MONITOR_DESC, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 110, 240, 16, hWnd, NULL, hInst, NULL);
-    LoadString(::hInst, IDS_RESOLUTION_DESC, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_RESOLUTION_DESC, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 160, 130, 16, hWnd, NULL, hInst, NULL);
-    LoadString(::hInst, IDS_REFRESH_DESC, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_REFRESH_DESC, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 140, 160, 105, 16, hWnd, NULL, hInst, NULL);
-    LoadString(::hInst, IDS_DISPLAY_MODE_DESC, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_DISPLAY_MODE_DESC, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 210, 240, 16, hWnd, NULL, hInst, NULL);
 
-    LoadString(::hInst, IDS_DEBUG, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_DEBUG, loadedString, MAX_LOADSTRING);
     debugModeButton = CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 295, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
-    LoadString(::hInst, IDS_SAVE, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_SAVE, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 320, 240, 30, hWnd, (HMENU)ID_SAVE, hInst, NULL);
-    LoadString(::hInst, IDS_PLAY, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_PLAY, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 355, 240, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
 
     EnumChildWindows(hWnd, (WNDENUMPROC)SetFont, (LPARAM)GetStockObject(DEFAULT_GUI_FONT));
@@ -256,21 +252,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CTLCOLORSTATIC:
     {
         HDC hdcStatic = (HDC)wParam;
-        HBRUSH BGColorBrush = CreateSolidBrush(RGB(255, 255, 255)); // 230 230
+        HBRUSH BGColorBrush = CreateSolidBrush(RGB(255, 255, 255));
 
         SetTextColor(hdcStatic, RGB(0, 0, 0));
         SetBkMode(hdcStatic, TRANSPARENT);
         return (LRESULT)BGColorBrush;
     }
-    break;
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-
-        EndPaint(hWnd, &ps);
-    }
-    break;
     case WM_COMMAND:
         return wndProcCommand(hWnd, message, wParam, lParam);
     case WM_DESTROY:
@@ -345,11 +332,15 @@ BOOL OniLauncher::initMonitorDisplayModes()
 {
     UINT adapters = d3d->GetAdapterCount();
 
-    monitorDisplayModes = (MONITORDISPLAYMODES **)calloc(adapters + 1U, sizeof(MONITORDISPLAYMODES *));
-
-    if (adapters <= 0 || monitorDisplayModes == NULL)
+    if (adapters <= 0)
         return FALSE;
 
+    monitorDisplayModes = (MONITORDISPLAYMODES **)calloc(adapters + 1U, sizeof(MONITORDISPLAYMODES *));
+
+    if (monitorDisplayModes == NULL)
+        return FALSE;
+
+    // TODO: Free monitorDisplayModes and all previous monitorDisplayModes[i] of the last monitorDisplayModes[i] if it failed te be malloc'ed.
     for (UINT i = 0; i < adapters; i++) {
         MONITORDISPLAYMODES *currentScreenDisplayMode = NULL;
         UINT modes = d3d->GetAdapterModeCount(i, D3DFMT_MODE);
@@ -414,12 +405,12 @@ VOID OniLauncher::resetRefreshRate()
 BOOL OniLauncher::fillMonitorComboBox()
 {
     INT comboBoxIndex;
-    TCHAR buffer[MAX_SMALL_STRING];
-    TCHAR monitorStr[MAX_SMALL_STRING];
-    LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_SMALL_STRING);
+    TCHAR buffer[MAX_LOADSTRING + 1 + UINT_DIGITS];
+    TCHAR monitorStr[MAX_LOADSTRING];
+    LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_LOADSTRING);
 
     for (UINT i = 0; monitorDisplayModes[i]; i++) {
-        _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%s %d"), monitorStr, i);
+        _stprintf_s(buffer, MAX_LOADSTRING + 1 + UINT_DIGITS, TEXT("%s %u"), monitorStr, i);
         comboBoxIndex = ComboBox_AddString(monitorComboBox, buffer);
         if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(monitorComboBox, comboBoxIndex, (LPARAM)i) == CB_ERR)
             return FALSE;
@@ -432,12 +423,12 @@ BOOL OniLauncher::fillMonitorComboBox()
 BOOL OniLauncher::fillResolutionComboBox()
 {
     INT comboBoxIndex;
-    TCHAR buffer[MAX_SMALL_STRING];
+    TCHAR buffer[UINT_DIGITS * 2 + 4];
     MONITORDISPLAYMODES *currentMonitorDisplayMode = monitorDisplayModes[currentMonitor];
 
     while (currentMonitorDisplayMode) {
         if (!(currentMonitorDisplayMode->next && currentMonitorDisplayMode->d3dDisplayMode.Width == currentMonitorDisplayMode->next->d3dDisplayMode.Width && currentMonitorDisplayMode->d3dDisplayMode.Height == currentMonitorDisplayMode->next->d3dDisplayMode.Height)) {
-            _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%d x %d"), currentMonitorDisplayMode->d3dDisplayMode.Width, currentMonitorDisplayMode->d3dDisplayMode.Height);
+            _stprintf_s(buffer, UINT_DIGITS * 2 + 4, TEXT("%u x %u"), currentMonitorDisplayMode->d3dDisplayMode.Width, currentMonitorDisplayMode->d3dDisplayMode.Height);
             comboBoxIndex = ComboBox_AddString(resolutionComboBox, buffer);
             if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(resolutionComboBox, comboBoxIndex, (LPARAM)currentMonitorDisplayMode) == CB_ERR)
                 return FALSE;
@@ -452,12 +443,12 @@ BOOL OniLauncher::fillResolutionComboBox()
 BOOL OniLauncher::fillRefreshComboBox()
 {
     INT comboBoxIndex;
-    TCHAR buffer[MAX_SMALL_STRING];
+    TCHAR buffer[UINT_DIGITS + 4];
     MONITORDISPLAYMODES *currentMonitorDisplayMode = monitorDisplayModes[currentMonitor];
 
     while (currentMonitorDisplayMode) {
         if (currentResolution.width == currentMonitorDisplayMode->d3dDisplayMode.Width && currentResolution.height == currentMonitorDisplayMode->d3dDisplayMode.Height) {
-            _stprintf_s(buffer, MAX_SMALL_STRING, TEXT("%d Hz"), currentMonitorDisplayMode->d3dDisplayMode.RefreshRate);
+            _stprintf_s(buffer, UINT_DIGITS + 4, TEXT("%u Hz"), currentMonitorDisplayMode->d3dDisplayMode.RefreshRate);
             comboBoxIndex = ComboBox_AddString(refreshRateComboBox, buffer);
             if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(refreshRateComboBox, comboBoxIndex, (LPARAM)currentMonitorDisplayMode->d3dDisplayMode.RefreshRate) == CB_ERR)
                 return FALSE;
@@ -472,17 +463,17 @@ BOOL OniLauncher::fillRefreshComboBox()
 BOOL OniLauncher::fillDisplayModeComboBox()
 {
     INT comboBoxIndex;
-    TCHAR loadedString[MAX_SMALL_STRING];
+    TCHAR loadedString[MAX_LOADSTRING];
 
-    LoadString(::hInst, IDS_DISPLAY_MODE_BORD, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_DISPLAY_MODE_BORD, loadedString, MAX_LOADSTRING);
     comboBoxIndex = ComboBox_AddString(displayModeComboBox, loadedString);
     if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(displayModeComboBox, comboBoxIndex, (LPARAM)DISPLAYMODE::BORDERLESS) == CB_ERR)
         return FALSE;
-    LoadString(::hInst, IDS_DISPLAY_MODE_FULL, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_DISPLAY_MODE_FULL, loadedString, MAX_LOADSTRING);
     comboBoxIndex = ComboBox_AddString(displayModeComboBox, loadedString);
     if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(displayModeComboBox, comboBoxIndex, (LPARAM)DISPLAYMODE::FULLSCREEN) == CB_ERR)
         return FALSE;
-    LoadString(::hInst, IDS_DISPLAY_MODE_WIND, loadedString, MAX_SMALL_STRING);
+    LoadString(::hInst, IDS_DISPLAY_MODE_WIND, loadedString, MAX_LOADSTRING);
     comboBoxIndex = ComboBox_AddString(displayModeComboBox, loadedString);
     if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(displayModeComboBox, comboBoxIndex, (LPARAM)DISPLAYMODE::WINDOWED) == CB_ERR)
         return FALSE;
@@ -572,29 +563,29 @@ BOOL OniLauncher::fetchSelectedDebugMode()
 
 BOOL OniLauncher::checkSettings()
 {
-    TCHAR loadedString[2][MAX_SMALL_STRING];
+    TCHAR loadedString[2][MAX_LOADSTRING];
 
     if (currentMonitor < 0) {
-        LoadString(::hInst, IDS_NO_MONITOR_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
-        LoadString(::hInst, IDS_NO_MONITOR_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_MONITOR_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDS_NO_MONITOR_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return FALSE;
     }
     if (currentResolution.width == 0 || currentResolution.height == 0) {
-        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
-        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return FALSE;
     }
     if (currentRefreshRate == 0) {
-        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
-        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return FALSE;
     }
     if (currentScreenMode == DISPLAYMODE::NONE) {
-        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_TITLE, loadedString[0], MAX_SMALL_STRING);
-        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_MSG, loadedString[1], MAX_SMALL_STRING);
+        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return FALSE;
     }
@@ -626,20 +617,19 @@ LRESULT OniLauncher::saveConfigFile()
 VOID OniLauncher::destroyMonitorDisplayModes()
 {
     MONITORDISPLAYMODES *currentScreenDisplayMode = NULL;
-    MONITORDISPLAYMODES *nextDisplayMode = NULL;
+    MONITORDISPLAYMODES *nextScreenDisplayMode = NULL;
 
     if (monitorDisplayModes == NULL)
         return;
 
     for (UINT i = 0; monitorDisplayModes[i]; i++) {
-        nextDisplayMode = monitorDisplayModes[i];
+        currentScreenDisplayMode = monitorDisplayModes[i];
         while (currentScreenDisplayMode) {
-            currentScreenDisplayMode = nextDisplayMode;
-            nextDisplayMode = currentScreenDisplayMode->next;
-            free(currentScreenDisplayMode);
+            nextScreenDisplayMode = currentScreenDisplayMode->next;
+            if (currentScreenDisplayMode)
+                free(currentScreenDisplayMode);
+            currentScreenDisplayMode = nextScreenDisplayMode;
         }
-        free(monitorDisplayModes[i]);
-        monitorDisplayModes[i] = NULL;
     }
     free(monitorDisplayModes);
     monitorDisplayModes = NULL;
