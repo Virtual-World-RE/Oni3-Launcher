@@ -135,6 +135,7 @@ enum class DISPLAYMODE : UINT
 class OniLauncher
 {
 private:
+    INT        configLoaded = FALSE;
     LPDIRECT3D9 d3d = NULL;
     //TODO Sort d3dDisplayModes by width, then by height and finally by refresh rate.
     D3DDISPLAYMODE ***d3dDisplayModes = NULL;
@@ -157,17 +158,19 @@ private:
     VOID        initD3D();
     BOOL        initMonitorDisplayModes();
 
-    BOOL        jsonLoadConfig();
-    BOOL        jsonConfigExists();
+    INT         jsonLoadConfig();
+    INT         jsonConfigExists();
 
     VOID        destroyMonitorDisplayModes();
     VOID        destroyD3D();
 public:
     OniLauncher();
 
-    D3DDISPLAYMODE *getMonitorDisplayMode(UINT width, UINT height, UINT refreshRate);
+    D3DDISPLAYMODE *getMonitorDisplayMode(UINT width, UINT height);
 
     VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox, HWND debugModeButton);
+    BOOL        isConfigLoaded();
+    BOOL        preFillSettingsFromConfig();
                 
     VOID        resetMonitor();
     VOID        resetResolution();

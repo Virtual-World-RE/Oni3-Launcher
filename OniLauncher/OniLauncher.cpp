@@ -142,6 +142,9 @@ LRESULT wndProcCreate(HWND hWnd)
     oniLauncher.fillMonitorComboBox();
     oniLauncher.fillDisplayModeComboBox();
 
+    if (oniLauncher.isConfigLoaded())
+        oniLauncher.preFillSettingsFromConfig();
+
     return 0;
 }
 
@@ -303,7 +306,7 @@ OniLauncher::OniLauncher()
     this->initD3D();
     this->initMonitorDisplayModes();
     if (this->jsonConfigExists())
-        this->jsonLoadConfig();
+        configLoaded = this->jsonLoadConfig();
 }
 
 VOID OniLauncher::initD3D()
@@ -348,43 +351,80 @@ BOOL OniLauncher::initMonitorDisplayModes()
     return TRUE;
 }
 
-BOOL OniLauncher::jsonLoadConfig()
+INT OniLauncher::jsonLoadConfig()
 {
+    DWORD dwByteReaded = 0;
+    CHAR settingsDump[2048] = { 0 };
+    TCHAR szPath[MAX_PATH];
+    HANDLE saveFile;
+    json settings;
+
+    if (!SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath)))
+        return (-1);
+
+    PathCchAppend(szPath, MAX_PATH, TEXT("OniLauncher"));
+    PathCchAppend(szPath, MAX_PATH, TEXT("config.json"));
+
+    saveFile = CreateFile(szPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (saveFile == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+    if (!ReadFile(saveFile, settingsDump, 2047, &dwByteReaded, NULL))
+        return FALSE;
+
+    CloseHandle(saveFile);
+    try {
+        settings = json::parse(settingsDump);
+    } catch (json::parse_error &e) {
+        CHAR buffer[200];
+        sprintf_s(buffer, 200, "nlohmann JSON failed to parse:\n%s", e.what());
+        MessageBoxA(hWnd, buffer, "Invalid JSON file", MB_OK | MB_ICONERROR);
+    }
+
+    currentMonitor = settings.value("monitor", -1);
+    currentResolution.height = settings["resolution"].value("height", 0);
+    currentResolution.width = settings["resolution"].value("width", 0);
+    currentRefreshRate = settings.value("refreshRate", 0);
+    currentDisplayMode = DISPLAYMODE::NONE;
+    if (settings.value("borderless", false) == true)
+        currentDisplayMode = DISPLAYMODE::BORDERLESS;
+    if (settings.value("fullscreen", false) == true)
+        currentDisplayMode = DISPLAYMODE::FULLSCREEN;
+    if (settings.value("borderless", false) == false && settings.value("fullscreen", false) == false)
+        currentDisplayMode = DISPLAYMODE::WINDOWED;
+    debugEnabled = settings.value("debugEnabled", false);
 
     return TRUE;
 }
 
-BOOL OniLauncher::jsonConfigExists()
+INT OniLauncher::jsonConfigExists()
 {
     TCHAR szPath[MAX_PATH];
 
-    if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath))) {
-        PathCchAppend(szPath, MAX_PATH, TEXT("OniLauncher"));
-        PathCchAppend(szPath, MAX_PATH, TEXT("config.json"));
-        if (PathFileExists(szPath))
-            if (!PathIsDirectory(szPath)) {
-                #ifdef _DEBUG
-                OutputDebugString(TEXT("Found JSON config file: "));
-                OutputDebugString(szPath);
-                OutputDebugString(TEXT("\n"));
-                #endif
-                return TRUE;
-            }
-    }
+    if (!SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath))) 
+        return (-1);
+    
+    PathCchAppend(szPath, MAX_PATH, TEXT("OniLauncher"));
+    PathCchAppend(szPath, MAX_PATH, TEXT("config.json"));
+    if (PathFileExists(szPath))
+        if (!PathIsDirectory(szPath)) {
+            #ifdef _DEBUG
+            OutputDebugString(TEXT("Found JSON config file: "));
+            OutputDebugString(szPath);
+            OutputDebugString(TEXT("\n"));
+            #endif
+            return TRUE;
+        }
 
     return FALSE;
 }
 
-D3DDISPLAYMODE *OniLauncher::getMonitorDisplayMode(UINT width, UINT height, UINT refreshRate)
+D3DDISPLAYMODE *OniLauncher::getMonitorDisplayMode(UINT width, UINT height)
 {
-    int i = 0;
-    D3DDISPLAYMODE *currentDisplayMode = d3dDisplayModes[currentMonitor][i];
-
-    while (currentDisplayMode) {
-        if (currentDisplayMode->Width == width && currentDisplayMode->Height == height && currentDisplayMode->RefreshRate == refreshRate)
-            return currentDisplayMode;
-
-        currentDisplayMode = d3dDisplayModes[currentMonitor][++i];
+    for (int i = 0; d3dDisplayModes[currentMonitor][i]; i++) {
+        if (d3dDisplayModes[currentMonitor][i]->Width == width && d3dDisplayModes[currentMonitor][i]->Height == height)
+            return d3dDisplayModes[currentMonitor][i];
     }
 
     return NULL;
@@ -398,6 +438,28 @@ VOID OniLauncher::setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionCo
     this->refreshRateComboBox = refreshRateComboBox;
     this->displayModeComboBox = displayModeComboBox;
     this->debugModeButton = debugModeButton;
+}
+
+BOOL OniLauncher::isConfigLoaded()
+{
+    return configLoaded;
+}
+
+BOOL OniLauncher::preFillSettingsFromConfig()
+{
+    if (ComboBox_SetCurSel(displayModeComboBox, ComboBox_SelectItemData(displayModeComboBox, 0, (LPARAM)currentDisplayMode)) == CB_ERR)
+        return 0;
+    if (ComboBox_SetCurSel(monitorComboBox, ComboBox_SelectItemData(monitorComboBox, 0, (LPARAM)currentMonitor)) == CB_ERR)
+        return 0;
+    fillResolutionComboBox();
+    if (ComboBox_SetCurSel(resolutionComboBox, ComboBox_SelectItemData(resolutionComboBox, 0, (LPARAM)getMonitorDisplayMode(currentResolution.width, currentResolution.height))) == CB_ERR)
+        return 0;
+    fillRefreshRateComboBox();
+    if (ComboBox_SetCurSel(refreshRateComboBox, ComboBox_SelectItemData(refreshRateComboBox, 0, (LPARAM)currentRefreshRate)) == CB_ERR)
+        return 0;
+    if (debugEnabled)
+        Button_SetCheck(debugModeButton, BST_CHECKED);
+    return 0;
 }
 
 VOID OniLauncher::resetMonitor()
@@ -611,7 +673,7 @@ BOOL OniLauncher::checkSettings()
 BOOL OniLauncher::saveConfigFile()
 {
     DWORD dwBytesWritten = 0;
-    CHAR settingsDump[4096];
+    CHAR settingsDump[2048];
     TCHAR szPath[MAX_PATH];
     HANDLE saveFile;
     json settings = json{
@@ -635,7 +697,7 @@ BOOL OniLauncher::saveConfigFile()
     if (saveFile == INVALID_HANDLE_VALUE)
         return FALSE;
     //settings.dump(4).size();
-    strcpy_s(settingsDump, 4096, settings.dump(4).c_str());
+    strcpy_s(settingsDump, 2047, settings.dump(4).c_str());
     WriteFile(saveFile, settingsDump, strlen(settingsDump), &dwBytesWritten, NULL);
 
     CloseHandle(saveFile);
