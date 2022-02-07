@@ -26,7 +26,7 @@ This project use a modified version of [OniPatch](https://github.com/xaviermonin
 ### Pre-requisites
 
 1. [DirectX DevKit](https://www.microsoft.com/en-us/download/details.aspx?id=6812).
-2. [Visual Studio 2019](https://visualstudio.microsoft.com/fr/free-developer-offers/).
+2. [Visual Studio 2022](https://visualstudio.microsoft.com/fr/free-developer-offers/).
 
 
 ## License
