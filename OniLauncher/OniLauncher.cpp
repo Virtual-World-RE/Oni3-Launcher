@@ -198,7 +198,8 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
     {
         if (!oniLauncher.checkSettings())
             return 0;
-        oniLauncher.saveConfigFile();
+        if (!oniLauncher.saveConfigFile())
+            showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file."));
         //oriLauncher.pseudoWinMain(hWnd);
         PostQuitMessage(0);
         return 0;
@@ -207,7 +208,8 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
     {
         if (!oniLauncher.checkSettings())
             return 0;
-        oniLauncher.saveConfigFile();
+        if (!oniLauncher.saveConfigFile())
+            showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file...\nTry again !"));
         return 0;
     }
     }
@@ -280,6 +282,7 @@ INT_PTR aboutProcCommand(HWND hDlg, UINT message, WPARAM wParam)
         EndDialog(hDlg, wmId);
         return (INT_PTR)TRUE;
     }
+    return (INT_PTR)TRUE;
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -347,11 +350,6 @@ BOOL OniLauncher::initMonitorDisplayModes()
 
 BOOL OniLauncher::jsonLoadConfig()
 {
-//    currentMonitor = 0;
-//    currentResolution.height = 1080;
-//    currentResolution.width = 1920;
-//    currentRefreshRate = 60;
-//    currentScreenMode = DISPLAYMODE::FULLSCREEN;
 
     return TRUE;
 }
@@ -610,12 +608,12 @@ BOOL OniLauncher::checkSettings()
     return TRUE;
 }
 
-LRESULT OniLauncher::saveConfigFile()
+BOOL OniLauncher::saveConfigFile()
 {
-    #ifdef _DEBUG
-    OutputDebugString(TEXT("INFO: Settings are being saved\n\n"));
-    #endif
-
+    DWORD dwBytesWritten = 0;
+    CHAR settingsDump[4096];
+    TCHAR szPath[MAX_PATH];
+    HANDLE saveFile;
     json settings = json{
         {"monitor", currentMonitor},
         {"resolution", {
@@ -627,9 +625,26 @@ LRESULT OniLauncher::saveConfigFile()
         {"debugEnabled", debugEnabled ? true : false}
     };
 
-    OutputDebugStringA(settings.dump(4).c_str());
+    if (!SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath)))
+        return FALSE;
+    PathCchAppend(szPath, MAX_PATH, TEXT("OniLauncher"));
+    if (CreateDirectory(szPath, NULL) == ERROR_PATH_NOT_FOUND)
+        return FALSE;
+    PathCchAppend(szPath, MAX_PATH, TEXT("config.json"));
+    saveFile = CreateFile(szPath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (saveFile == INVALID_HANDLE_VALUE)
+        return FALSE;
+    //settings.dump(4).size();
+    strcpy_s(settingsDump, 4096, settings.dump(4).c_str());
+    WriteFile(saveFile, settingsDump, strlen(settingsDump), &dwBytesWritten, NULL);
 
-    return 0;
+    CloseHandle(saveFile);
+
+    #ifdef _DEBUG
+    OutputDebugString(TEXT("INFO: Settings are saved\n\n"));
+    #endif
+
+    return TRUE;
 }
 
 VOID OniLauncher::destroyMonitorDisplayModes()

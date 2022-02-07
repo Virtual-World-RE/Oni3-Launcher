@@ -185,7 +185,7 @@ public:
     BOOL        fetchSelectedDebugMode();
                 
     BOOL        checkSettings();
-    LRESULT     saveConfigFile();
+    BOOL        saveConfigFile();
 
     ~OniLauncher();
 };
