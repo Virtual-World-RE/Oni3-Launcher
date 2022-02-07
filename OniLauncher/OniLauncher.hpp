@@ -25,6 +25,7 @@
 #include "error.h"
 #include "Resource.h"
 #include "OriLauncher.hpp"
+#include "windowsx_bugfix.hpp"
 
 #define MAX_LOADSTRING 100
 #define MAX_STRERROR_S_LENGTH 94
@@ -40,12 +41,6 @@
 #define DROPDOWN_COMBO_BOX DEFAULT_STYLE | CBS_DROPDOWNLIST | WS_VSCROLL
 
 using json = nlohmann::json;
-
-typedef struct MONITORDISPLAYMODES
-{
-    D3DDISPLAYMODE d3dDisplayMode;
-    struct MONITORDISPLAYMODES *next;
-} MONITORDISPLAYMODES;
 
 typedef struct
 {
@@ -79,7 +74,7 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 ///   <para>FALSE if failed.</para>
 ///   <para>TRUE if succeed.</para>
 /// </returns>
-BOOL             MainWindowRegisterClass(HINSTANCE hInstance);
+BOOL                MainWindowRegisterClass(HINSTANCE hInstance);
 
 /// <summary>
 ///   <para>Create a main window.</para>
@@ -91,7 +86,7 @@ BOOL             MainWindowRegisterClass(HINSTANCE hInstance);
 ///   <para>FALSE if failed.</para>
 ///   <para>TRUE if succeed.</para>
 /// </returns>
-BOOL             InitInstance(HINSTANCE hinstance, int nCmdShow);
+BOOL                InitInstance(HINSTANCE hinstance, int nCmdShow);
 
 /// <summary>
 ///   <para>Set a given font for a given handler.</para>
@@ -100,7 +95,7 @@ BOOL             InitInstance(HINSTANCE hinstance, int nCmdShow);
 /// <param name="child">: Handler to child window.</param>
 /// <param name="font">: Font to be used.</param>
 /// <returns>Always returns TRUE.</returns>
-BOOL    CALLBACK SetFont(HWND child, LPARAM font);
+BOOL    CALLBACK    SetFont(HWND child, LPARAM font);
 
 /// <summary>
 ///   Processes messages for the main window.
@@ -116,14 +111,18 @@ BOOL    CALLBACK SetFont(HWND child, LPARAM font);
 ///   <para>WM_DESTROY - Send a message then returns.</para>
 /// </remarks>
 /// <returns></returns>
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 /// Sub-function for main window process WndProc()
-LRESULT          wndProcCreate(HWND hWnd);
-LRESULT          wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT             wndProcCreate(HWND hWnd);
+LRESULT             wndProcCtlColorStatic(WPARAM wParam);
+LRESULT             wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT             wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode);
+LRESULT             wndProcCommandScreenSettings(HWND hWnd, UINT wmId, UINT iCode);
 
-// LPUINT           getNumbers(LPTSTR str);
+/// Sub-function for about dialog window About()
+INT_PTR             aboutProcCommand(HWND hDlg, UINT message, WPARAM wParam);
 
 enum class DISPLAYMODE : UINT
 {
@@ -137,13 +136,15 @@ class OniLauncher
 {
 private:
     LPDIRECT3D9 d3d = NULL;
-
-    MONITORDISPLAYMODES **monitorDisplayModes = NULL;
+    //TODO Sort d3dDisplayModes by width, then by height and finally by refresh rate.
+    D3DDISPLAYMODE ***d3dDisplayModes = NULL;
     
-    UINT        currentMonitor = 0;
+    //TODO currentMonitor should be capable of containing a least an unsigned int AND negative value.
+    INT         currentMonitor = -1;
+    //TODO replace currentResolution and currentRefreshRate by a single d3dDisplayMode
     RESOLUTION  currentResolution = { 0, 0 };
     UINT        currentRefreshRate = 0;
-    DISPLAYMODE currentScreenMode = DISPLAYMODE::NONE;
+    DISPLAYMODE currentDisplayMode = DISPLAYMODE::NONE;
     BOOL        debugEnabled = FALSE;
 
     HWND        hWnd = NULL;
@@ -164,6 +165,8 @@ private:
 public:
     OniLauncher();
 
+    D3DDISPLAYMODE *getMonitorDisplayMode(UINT width, UINT height, UINT refreshRate);
+
     VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox, HWND debugModeButton);
                 
     VOID        resetMonitor();
@@ -172,7 +175,7 @@ public:
                 
     BOOL        fillMonitorComboBox();
     BOOL        fillResolutionComboBox();
-    BOOL        fillRefreshComboBox();
+    BOOL        fillRefreshRateComboBox();
     BOOL        fillDisplayModeComboBox();
 
     BOOL        fetchSelectedMonitor();

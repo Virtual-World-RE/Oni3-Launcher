@@ -100,7 +100,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     }
 
     ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
 
     return TRUE;
 }
@@ -166,7 +165,7 @@ LRESULT wndProcCommandScreenSettings(HWND hWnd, UINT wmId, UINT iCode)
         oniLauncher.resetRefreshRate();
 
         oniLauncher.fetchSelectedResolution();
-        oniLauncher.fillRefreshComboBox();
+        oniLauncher.fillRefreshRateComboBox();
         return 0;
     }
     case ID_REFRESH_RATE:
@@ -220,13 +219,12 @@ LRESULT wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UINT wmId = LOWORD(wParam);
     UINT iCode = HIWORD(wParam);
-    HWND hCtl = (HWND)lParam;
 
     // Analyse les sélections de menu :
     switch (wmId) {
     case IDM_ABOUT:
-        DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-        break;
+        DialogBox(::hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+        return 0;
     case IDM_EXIT:
         return !DestroyWindow(hWnd);
     case ID_DISPLAY_MODE:
@@ -244,20 +242,24 @@ LRESULT wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
+LRESULT wndProcCtlColorStatic(WPARAM wParam)
+{
+    HDC hdcStatic = (HDC)wParam;
+    HBRUSH BGColorBrush = CreateSolidBrush(RGB(255, 255, 255));
+
+    SetTextColor(hdcStatic, RGB(0, 0, 0));
+    SetBkMode(hdcStatic, TRANSPARENT);
+
+    return (LRESULT)BGColorBrush;
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message) {
     case WM_CREATE:
         return wndProcCreate(hWnd);
     case WM_CTLCOLORSTATIC:
-    {
-        HDC hdcStatic = (HDC)wParam;
-        HBRUSH BGColorBrush = CreateSolidBrush(RGB(255, 255, 255));
-
-        SetTextColor(hdcStatic, RGB(0, 0, 0));
-        SetBkMode(hdcStatic, TRANSPARENT);
-        return (LRESULT)BGColorBrush;
-    }
+        return wndProcCtlColorStatic(wParam);
     case WM_COMMAND:
         return wndProcCommand(hWnd, message, wParam, lParam);
     case WM_DESTROY:
@@ -269,25 +271,88 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
+INT_PTR aboutProcCommand(HWND hDlg, UINT message, WPARAM wParam)
+{
+    UINT wmId = LOWORD(wParam);
+    UINT iCode = HIWORD(wParam);
+
+    if (wmId == IDOK || wmId == IDCANCEL) {
+        EndDialog(hDlg, wmId);
+        return (INT_PTR)TRUE;
+    }
+}
+
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
+
     switch (message) {
     case WM_INITDIALOG:
         return (INT_PTR)TRUE;
-
     case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
+        return aboutProcCommand(hDlg, message, wParam);
     }
     return (INT_PTR)FALSE;
 }
 
+OniLauncher::OniLauncher()
+{
+    this->initD3D();
+    this->initMonitorDisplayModes();
+    if (this->jsonConfigExists())
+        this->jsonLoadConfig();
+}
+
+VOID OniLauncher::initD3D()
+{
+    d3d = Direct3DCreate9(D3D_SDK_VERSION);
+
+    if (d3d == NULL)
+        throw TEXT("D3D Failed to initialize...");
+}
+
+BOOL OniLauncher::initMonitorDisplayModes()
+{
+    UINT adapters = d3d->GetAdapterCount();
+
+    if (adapters <= 0 || adapters == UINT_MAX)
+        return FALSE;
+
+    d3dDisplayModes = (D3DDISPLAYMODE ***)calloc(adapters + 1U, sizeof(D3DDISPLAYMODE **));
+
+    if (d3dDisplayModes == NULL)
+        return FALSE;
+
+    // TODO: Free monitorDisplayModes and all previous monitorDisplayModes[i] of the last monitorDisplayModes[i] if it failed te be malloc'ed.
+    for (UINT i = 0; i < adapters; i++) {
+        UINT modes = d3d->GetAdapterModeCount(i, D3DFMT_MODE);
+
+        d3dDisplayModes[i] = (D3DDISPLAYMODE **)calloc(modes + 1U, sizeof(D3DDISPLAYMODE *));
+
+        if (d3dDisplayModes[i] == NULL)
+            return FALSE;
+
+        for (UINT j = 0; j < modes; j++) {
+            d3dDisplayModes[i][j] = (D3DDISPLAYMODE *)calloc(1U, sizeof(D3DDISPLAYMODE));
+
+            if (d3dDisplayModes[i][j] == NULL)
+                return FALSE;
+
+            d3d->EnumAdapterModes(i, D3DFMT_MODE, j, d3dDisplayModes[i][j]);
+        }
+    }
+
+    return TRUE;
+}
+
 BOOL OniLauncher::jsonLoadConfig()
 {
+//    currentMonitor = 0;
+//    currentResolution.height = 1080;
+//    currentResolution.width = 1920;
+//    currentRefreshRate = 60;
+//    currentScreenMode = DISPLAYMODE::FULLSCREEN;
+
     return TRUE;
 }
 
@@ -312,62 +377,19 @@ BOOL OniLauncher::jsonConfigExists()
     return FALSE;
 }
 
-OniLauncher::OniLauncher()
+D3DDISPLAYMODE *OniLauncher::getMonitorDisplayMode(UINT width, UINT height, UINT refreshRate)
 {
-    this->initD3D();
-    this->initMonitorDisplayModes();
-    if (this->jsonConfigExists())
-        this->jsonLoadConfig();
-}
+    int i = 0;
+    D3DDISPLAYMODE *currentDisplayMode = d3dDisplayModes[currentMonitor][i];
 
-VOID OniLauncher::initD3D()
-{
-    d3d = Direct3DCreate9(D3D_SDK_VERSION);
+    while (currentDisplayMode) {
+        if (currentDisplayMode->Width == width && currentDisplayMode->Height == height && currentDisplayMode->RefreshRate == refreshRate)
+            return currentDisplayMode;
 
-    if (d3d == NULL)
-        throw TEXT("D3D Failed to initialize...");
-}
-
-BOOL OniLauncher::initMonitorDisplayModes()
-{
-    UINT adapters = d3d->GetAdapterCount();
-
-    if (adapters <= 0)
-        return FALSE;
-
-    monitorDisplayModes = (MONITORDISPLAYMODES **)calloc(adapters + 1U, sizeof(MONITORDISPLAYMODES *));
-
-    if (monitorDisplayModes == NULL)
-        return FALSE;
-
-    // TODO: Free monitorDisplayModes and all previous monitorDisplayModes[i] of the last monitorDisplayModes[i] if it failed te be malloc'ed.
-    for (UINT i = 0; i < adapters; i++) {
-        MONITORDISPLAYMODES *currentScreenDisplayMode = NULL;
-        UINT modes = d3d->GetAdapterModeCount(i, D3DFMT_MODE);
-
-        monitorDisplayModes[i] = (MONITORDISPLAYMODES *)malloc(sizeof(MONITORDISPLAYMODES));
-        currentScreenDisplayMode = monitorDisplayModes[i];
-
-        if (monitorDisplayModes[i] == NULL)
-            return FALSE;
-
-        for (UINT j = 0; j < modes; j++) {
-            d3d->EnumAdapterModes(i, D3DFMT_MODE, j, &currentScreenDisplayMode->d3dDisplayMode);
-
-            if (j < modes - 1U) {
-                currentScreenDisplayMode->next = (MONITORDISPLAYMODES *)malloc(sizeof(MONITORDISPLAYMODES));
-
-                if (currentScreenDisplayMode->next == NULL)
-                    return FALSE;
-
-                currentScreenDisplayMode = currentScreenDisplayMode->next;
-            }
-
-            currentScreenDisplayMode->next = NULL;
-        }
+        currentDisplayMode = d3dDisplayModes[currentMonitor][++i];
     }
 
-    return TRUE;
+    return NULL;
 }
 
 VOID OniLauncher::setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND displayModeComboBox, HWND debugModeButton)
@@ -409,7 +431,7 @@ BOOL OniLauncher::fillMonitorComboBox()
     TCHAR monitorStr[MAX_LOADSTRING];
     LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_LOADSTRING);
 
-    for (UINT i = 0; monitorDisplayModes[i]; i++) {
+    for (UINT i = 0; d3dDisplayModes[i]; i++) {
         _stprintf_s(buffer, MAX_LOADSTRING + 1 + UINT_DIGITS, TEXT("%s %u"), monitorStr, i);
         comboBoxIndex = ComboBox_AddString(monitorComboBox, buffer);
         if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(monitorComboBox, comboBoxIndex, (LPARAM)i) == CB_ERR)
@@ -424,36 +446,32 @@ BOOL OniLauncher::fillResolutionComboBox()
 {
     INT comboBoxIndex;
     TCHAR buffer[UINT_DIGITS * 2 + 4];
-    MONITORDISPLAYMODES *currentMonitorDisplayMode = monitorDisplayModes[currentMonitor];
 
-    while (currentMonitorDisplayMode) {
-        if (!(currentMonitorDisplayMode->next && currentMonitorDisplayMode->d3dDisplayMode.Width == currentMonitorDisplayMode->next->d3dDisplayMode.Width && currentMonitorDisplayMode->d3dDisplayMode.Height == currentMonitorDisplayMode->next->d3dDisplayMode.Height)) {
-            _stprintf_s(buffer, UINT_DIGITS * 2 + 4, TEXT("%u x %u"), currentMonitorDisplayMode->d3dDisplayMode.Width, currentMonitorDisplayMode->d3dDisplayMode.Height);
+    for (int i = 0; d3dDisplayModes[currentMonitor][i]; i++) {
+        if (i > 0 && !(d3dDisplayModes[currentMonitor][i - 1]->Width == d3dDisplayModes[currentMonitor][i]->Width && d3dDisplayModes[currentMonitor][i - 1]->Height == d3dDisplayModes[currentMonitor][i]->Height)) {
+            _stprintf_s(buffer, UINT_DIGITS * 2 + 4, TEXT("%u x %u"), d3dDisplayModes[currentMonitor][i]->Width, d3dDisplayModes[currentMonitor][i]->Height);
             comboBoxIndex = ComboBox_AddString(resolutionComboBox, buffer);
-            if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(resolutionComboBox, comboBoxIndex, (LPARAM)currentMonitorDisplayMode) == CB_ERR)
+            if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(resolutionComboBox, comboBoxIndex, (LPARAM)d3dDisplayModes[currentMonitor][i]) == CB_ERR)
                 return FALSE;
         }
-        currentMonitorDisplayMode = currentMonitorDisplayMode->next;
     }
 
     ComboBox_Enable(resolutionComboBox, TRUE);
     return TRUE;
 }
 
-BOOL OniLauncher::fillRefreshComboBox()
+BOOL OniLauncher::fillRefreshRateComboBox()
 {
     INT comboBoxIndex;
     TCHAR buffer[UINT_DIGITS + 4];
-    MONITORDISPLAYMODES *currentMonitorDisplayMode = monitorDisplayModes[currentMonitor];
 
-    while (currentMonitorDisplayMode) {
-        if (currentResolution.width == currentMonitorDisplayMode->d3dDisplayMode.Width && currentResolution.height == currentMonitorDisplayMode->d3dDisplayMode.Height) {
-            _stprintf_s(buffer, UINT_DIGITS + 4, TEXT("%u Hz"), currentMonitorDisplayMode->d3dDisplayMode.RefreshRate);
+    for (int i = 0; d3dDisplayModes[currentMonitor][i]; i++) {
+        if (currentResolution.width == d3dDisplayModes[currentMonitor][i]->Width && currentResolution.height == d3dDisplayModes[currentMonitor][i]->Height) {
+            _stprintf_s(buffer, UINT_DIGITS + 4, TEXT("%u Hz"), d3dDisplayModes[currentMonitor][i]->RefreshRate);
             comboBoxIndex = ComboBox_AddString(refreshRateComboBox, buffer);
-            if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(refreshRateComboBox, comboBoxIndex, (LPARAM)currentMonitorDisplayMode->d3dDisplayMode.RefreshRate) == CB_ERR)
+            if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(refreshRateComboBox, comboBoxIndex, (LPARAM)d3dDisplayModes[currentMonitor][i]->RefreshRate) == CB_ERR)
                 return FALSE;
         }
-        currentMonitorDisplayMode = currentMonitorDisplayMode->next;
     }
 
     ComboBox_Enable(refreshRateComboBox, TRUE);
@@ -484,7 +502,7 @@ BOOL OniLauncher::fillDisplayModeComboBox()
 
 BOOL OniLauncher::fetchSelectedMonitor()
 {
-    currentMonitor = (UINT)ComboBox_GetItemData(monitorComboBox, ComboBox_GetCurSel(monitorComboBox));
+    currentMonitor = ComboBox_GetItemData(monitorComboBox, ComboBox_GetCurSel(monitorComboBox));
 
     if (currentMonitor == CB_ERR)
         return FALSE;
@@ -500,11 +518,11 @@ BOOL OniLauncher::fetchSelectedMonitor()
 
 BOOL OniLauncher::fetchSelectedResolution()
 {
-    MONITORDISPLAYMODES *dMode = (MONITORDISPLAYMODES *)ComboBox_GetItemData(resolutionComboBox, ComboBox_GetCurSel(resolutionComboBox));
-    currentResolution.width = dMode->d3dDisplayMode.Width;
-    currentResolution.height = dMode->d3dDisplayMode.Height;
+    D3DDISPLAYMODE *d3dDisplayMode = (D3DDISPLAYMODE *)ComboBox_GetItemData(resolutionComboBox, ComboBox_GetCurSel(resolutionComboBox));
+    currentResolution.width = d3dDisplayMode->Width;
+    currentResolution.height = d3dDisplayMode->Height;
 
-    if ((INT)dMode == CB_ERR)
+    if (d3dDisplayMode == (LPVOID)CB_ERR)
         return FALSE;
 
     #ifdef _DEBUG
@@ -534,14 +552,14 @@ BOOL OniLauncher::fetchSelectedRefreshRate()
 
 BOOL OniLauncher::fetchSelectedDisplayMode()
 {
-    currentScreenMode = (DISPLAYMODE)ComboBox_GetItemData(displayModeComboBox, ComboBox_GetCurSel(displayModeComboBox));
+    currentDisplayMode = (DISPLAYMODE)ComboBox_GetItemData(displayModeComboBox, ComboBox_GetCurSel(displayModeComboBox));
 
-    if ((INT)currentScreenMode == CB_ERR)
+    if ((INT)currentDisplayMode == CB_ERR)
         return FALSE;
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Selected display mode is %s\n"), currentScreenMode == DISPLAYMODE::BORDERLESS ? TEXT("Borderless") : currentScreenMode == DISPLAYMODE::FULLSCREEN ? TEXT("Fullscreen") : currentScreenMode == DISPLAYMODE::WINDOWED ? TEXT("Windowed") : TEXT("Unknown"));
+    _stprintf_s(debugBuffer, TEXT("Selected display mode is %s\n"), currentDisplayMode == DISPLAYMODE::BORDERLESS ? TEXT("Borderless") : currentDisplayMode == DISPLAYMODE::FULLSCREEN ? TEXT("Fullscreen") : currentDisplayMode == DISPLAYMODE::WINDOWED ? TEXT("Windowed") : TEXT("Unknown"));
     OutputDebugString(debugBuffer);
     #endif
 
@@ -583,7 +601,7 @@ BOOL OniLauncher::checkSettings()
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return FALSE;
     }
-    if (currentScreenMode == DISPLAYMODE::NONE) {
+    if (currentDisplayMode == DISPLAYMODE::NONE) {
         LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
         LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
@@ -604,8 +622,8 @@ LRESULT OniLauncher::saveConfigFile()
             {"width", currentResolution.width},
         {"height", currentResolution.height}}},
         {"refreshRate", currentRefreshRate},
-        {"fullscreen", currentScreenMode == DISPLAYMODE::FULLSCREEN ? true : false},
-        {"borderless", currentScreenMode == DISPLAYMODE::BORDERLESS ? true : false},
+        {"fullscreen", currentDisplayMode == DISPLAYMODE::FULLSCREEN ? true : false},
+        {"borderless", currentDisplayMode == DISPLAYMODE::BORDERLESS ? true : false},
         {"debugEnabled", debugEnabled ? true : false}
     };
 
@@ -616,23 +634,19 @@ LRESULT OniLauncher::saveConfigFile()
 
 VOID OniLauncher::destroyMonitorDisplayModes()
 {
-    MONITORDISPLAYMODES *currentScreenDisplayMode = NULL;
-    MONITORDISPLAYMODES *nextScreenDisplayMode = NULL;
-
-    if (monitorDisplayModes == NULL)
+    if (d3dDisplayModes == NULL)
         return;
 
-    for (UINT i = 0; monitorDisplayModes[i]; i++) {
-        currentScreenDisplayMode = monitorDisplayModes[i];
-        while (currentScreenDisplayMode) {
-            nextScreenDisplayMode = currentScreenDisplayMode->next;
-            if (currentScreenDisplayMode)
-                free(currentScreenDisplayMode);
-            currentScreenDisplayMode = nextScreenDisplayMode;
+    for (UINT i = 0; d3dDisplayModes[i]; i++) {
+        for (UINT j = 0; d3dDisplayModes[i][j]; j++) {
+            free(d3dDisplayModes[i][j]);
+            d3dDisplayModes[i][j] = NULL;
         }
+        free(d3dDisplayModes[i]);
+        d3dDisplayModes[i] = NULL;
     }
-    free(monitorDisplayModes);
-    monitorDisplayModes = NULL;
+    free(d3dDisplayModes);
+    d3dDisplayModes = NULL;
 }
 
 VOID OniLauncher::destroyD3D()
