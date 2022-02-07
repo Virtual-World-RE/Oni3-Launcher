@@ -176,6 +176,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="error.h" />
+    <ClInclude Include="windowsx_bugfix.hpp" />
     <ClInclude Include="OniLauncher.hpp" />
     <ClInclude Include="OriLauncher.hpp" />
     <ClInclude Include="pch.h" />
@@ -184,6 +185,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="error.cpp" />
+    <ClCompile Include="windowsx_bugfix.cpp" />
     <ClCompile Include="OniLauncher.cpp" />
     <ClCompile Include="OriLauncher.cpp" />
     <ClCompile Include="pch.cpp" />

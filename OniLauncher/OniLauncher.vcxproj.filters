@@ -33,6 +33,9 @@
     <ClInclude Include="error.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="windowsx_bugfix.hpp">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OniLauncher.cpp">
@@ -45,6 +48,9 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="error.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="windowsx_bugfix.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
