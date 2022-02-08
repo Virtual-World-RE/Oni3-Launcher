@@ -135,7 +135,7 @@ enum class DISPLAYMODE : UINT
 class OniLauncher
 {
 private:
-    INT        configLoaded = FALSE;
+    INT         configLoaded = FALSE;
     LPDIRECT3D9 d3d = NULL;
     //TODO Sort d3dDisplayModes by width, then by height and finally by refresh rate.
     D3DDISPLAYMODE ***d3dDisplayModes = NULL;
