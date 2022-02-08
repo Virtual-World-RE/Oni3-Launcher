@@ -24,7 +24,6 @@
 #include "pch.h"
 #include "error.h"
 #include "Resource.h"
-#include "OriLauncher.hpp"
 #include "windowsx_bugfix.hpp"
 
 #define MAX_LOADSTRING 100
@@ -74,7 +73,7 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 ///   <para>FALSE if failed.</para>
 ///   <para>TRUE if succeed.</para>
 /// </returns>
-BOOL                MainWindowRegisterClass(HINSTANCE hInstance);
+bool                MainWindowRegisterClass(HINSTANCE hInstance);
 
 /// <summary>
 ///   <para>Create a main window.</para>
@@ -86,7 +85,7 @@ BOOL                MainWindowRegisterClass(HINSTANCE hInstance);
 ///   <para>FALSE if failed.</para>
 ///   <para>TRUE if succeed.</para>
 /// </returns>
-BOOL                InitInstance(HINSTANCE hinstance, int nCmdShow);
+bool                InitInstance(HINSTANCE hinstance, int nCmdShow);
 
 /// <summary>
 ///   <para>Set a given font for a given handler.</para>
@@ -95,7 +94,7 @@ BOOL                InitInstance(HINSTANCE hinstance, int nCmdShow);
 /// <param name="child">: Handler to child window.</param>
 /// <param name="font">: Font to be used.</param>
 /// <returns>Always returns TRUE.</returns>
-BOOL    CALLBACK    SetFont(HWND child, LPARAM font);
+BOOL CALLBACK       SetFont(HWND child, LPARAM font);
 
 /// <summary>
 ///   Processes messages for the main window.
@@ -124,6 +123,8 @@ LRESULT             wndProcCommandScreenSettings(HWND hWnd, UINT wmId, UINT iCod
 /// Sub-function for about dialog window About()
 INT_PTR             aboutProcCommand(HWND hDlg, UINT message, WPARAM wParam);
 
+int d3dDisplayModeCmp(const void *firstD3dDisplayMode, const void *secondD3dDisplayMode);
+
 enum class DISPLAYMODE : UINT
 {
     NONE,
@@ -135,18 +136,16 @@ enum class DISPLAYMODE : UINT
 class OniLauncher
 {
 private:
-    INT         configLoaded = FALSE;
+    bool        configLoaded = false;
     LPDIRECT3D9 d3d = NULL;
-    //TODO Sort d3dDisplayModes by width, then by height and finally by refresh rate.
-    D3DDISPLAYMODE ***d3dDisplayModes = NULL;
+    D3DDISPLAYMODE **d3dDisplayModes = NULL;
     
-    //TODO currentMonitor should be capable of containing a least an unsigned int AND negative value.
-    INT         currentMonitor = -1;
+    UINT        currentMonitor = 0;
     //TODO replace currentResolution and currentRefreshRate by a single d3dDisplayMode
     RESOLUTION  currentResolution = { 0, 0 };
     UINT        currentRefreshRate = 0;
     DISPLAYMODE currentDisplayMode = DISPLAYMODE::NONE;
-    BOOL        debugEnabled = FALSE;
+    bool        debugEnabled = false;
 
     HWND        hWnd = NULL;
     HWND        monitorComboBox = NULL;
@@ -155,11 +154,22 @@ private:
     HWND        displayModeComboBox = NULL;
     HWND        debugModeButton = NULL;
 
-    VOID        initD3D();
-    BOOL        initMonitorDisplayModes();
+    HKEY        currentHKey = NULL;
+    bool        oni3ProcessCreated = false;
+    DWORD       oni3GamePathLength = 0UL;
+    HANDLE      oni3GameExeFileHandler = NULL;
 
-    INT         jsonLoadConfig();
-    INT         jsonConfigExists();
+    STARTUPINFO         oni3GameSI;
+    PROCESS_INFORMATION oni3GamePI;
+
+    TCHAR       oni3GameExePath[MAX_PATH];
+    TCHAR       oni3GamePath[MAX_PATH];
+
+    VOID        initD3D();
+    bool        initMonitorDisplayModes();
+
+    bool        jsonLoadConfig();
+    bool        jsonConfigExists();
 
     VOID        destroyMonitorDisplayModes();
     VOID        destroyD3D();
@@ -168,27 +178,28 @@ public:
 
     D3DDISPLAYMODE *getMonitorDisplayMode(UINT width, UINT height);
 
+    bool        startGameWithPatch();
+
     VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox, HWND debugModeButton);
-    BOOL        isConfigLoaded();
-    BOOL        preFillSettingsFromConfig();
+    bool        isConfigLoaded();
+    bool        preFillSettingsFromConfig();
                 
-    VOID        resetMonitor();
     VOID        resetResolution();
     VOID        resetRefreshRate();
                 
-    BOOL        fillMonitorComboBox();
-    BOOL        fillResolutionComboBox();
-    BOOL        fillRefreshRateComboBox();
-    BOOL        fillDisplayModeComboBox();
+    bool        fillMonitorComboBox();
+    bool        fillResolutionComboBox();
+    bool        fillRefreshRateComboBox();
+    bool        fillDisplayModeComboBox();
 
-    BOOL        fetchSelectedMonitor();
-    BOOL        fetchSelectedResolution();
-    BOOL        fetchSelectedRefreshRate();
-    BOOL        fetchSelectedDisplayMode();
-    BOOL        fetchSelectedDebugMode();
-                
-    BOOL        checkSettings();
-    BOOL        saveConfigFile();
+    bool        fetchSelectedMonitor();
+    bool        fetchSelectedResolution();
+    bool        fetchSelectedRefreshRate();
+    bool        fetchSelectedDisplayMode();
+    bool        fetchSelectedDebugMode();
+        
+    bool        checkSettings();
+    bool        saveConfigFile();
 
     ~OniLauncher();
 };
