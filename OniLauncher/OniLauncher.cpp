@@ -427,17 +427,16 @@ bool OniLauncher::jsonLoadConfig()
     }
 
     currentMonitor = settings.value<UINT>("monitor", -1);
-    currentResolution.height = settings["resolution"].value("height", 0);
-    currentResolution.width = settings["resolution"].value("width", 0);
-    currentRefreshRate = settings.value("refreshRate", 0);
-    currentDisplayMode = DISPLAYMODE::NONE;
-    if (settings.value("borderless", false) == true)
+    currentResolution.height = settings["resolution"].value<UINT>("height", 0);
+    currentResolution.width = settings["resolution"].value<UINT>("width", 0);
+    currentRefreshRate = settings.value<UINT>("refreshRate", 0);
+    if (settings.value<bool>("borderless", false) == true)
         currentDisplayMode = DISPLAYMODE::BORDERLESS;
-    if (settings.value("fullscreen", false) == true)
+    if (settings.value<bool>("fullscreen", false) == true)
         currentDisplayMode = DISPLAYMODE::FULLSCREEN;
-    if (settings.value("borderless", false) == false && settings.value("fullscreen", false) == false)
+    if (settings.value<bool>("borderless", false) == false && settings.value<bool>("fullscreen", false) == false)
         currentDisplayMode = DISPLAYMODE::WINDOWED;
-    debugEnabled = settings.value("debugEnabled", false);
+    debugEnabled = settings.value<bool>("debugEnabled", false);
 
     return true;
 }
