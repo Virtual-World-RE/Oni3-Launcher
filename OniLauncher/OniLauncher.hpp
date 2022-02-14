@@ -140,10 +140,11 @@ private:
     LPDIRECT3D9 d3d = NULL;
     D3DDISPLAYMODE **d3dDisplayModes = NULL;
     
-    UINT        currentMonitor = 0;
+    UINT        currentMonitor = 0U;
+    UINT        currentMode = 0U;
     //TODO replace currentResolution and currentRefreshRate by a single d3dDisplayMode
-    RESOLUTION  currentResolution = { 0, 0 };
-    UINT        currentRefreshRate = 0;
+    RESOLUTION  currentResolution = { 0U, 0U };
+    UINT        currentRefreshRate = 0U;
     DISPLAYMODE currentDisplayMode = DISPLAYMODE::NONE;
     bool        debugEnabled = false;
 
@@ -176,13 +177,12 @@ private:
 public:
     OniLauncher();
 
-    D3DDISPLAYMODE *getMonitorDisplayMode(UINT width, UINT height);
+    UINT        getMonitorDisplayMode(UINT width, UINT height);
 
     bool        startGameWithPatch();
 
     VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox, HWND debugModeButton);
-    bool        isConfigLoaded();
-    bool        preFillSettingsFromConfig();
+    bool        prefillSettingsFromConfig();
                 
     VOID        resetResolution();
     VOID        resetRefreshRate();
