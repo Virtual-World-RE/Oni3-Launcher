@@ -26,6 +26,7 @@
 #include "Resource.h"
 #include "windowsx_bugfix.hpp"
 
+#define MAX_LANG_LENGTH 32
 #define MAX_LOADSTRING 100
 #define MAX_STRERROR_S_LENGTH 94
 #define UINT_DIGITS 10
@@ -140,12 +141,13 @@ private:
     LPDIRECT3D9 d3d = NULL;
     D3DDISPLAYMODE **d3dDisplayModes = NULL;
     
-    UINT        currentMonitor = 0U;
-    UINT        currentMode = 0U;
-    //TODO replace currentResolution and currentRefreshRate by a single d3dDisplayMode
-    RESOLUTION  currentResolution = { 0U, 0U };
-    UINT        currentRefreshRate = 0U;
-    DISPLAYMODE currentDisplayMode = DISPLAYMODE::NONE;
+    UINT        selectedMonitor = 0U;
+    UINT        selectedMode = 0U;
+    //TODO replace selectedResolution and selectedRefreshRate by a single d3dDisplayMode
+    RESOLUTION  selectedResolution = { 0U, 0U };
+    UINT        selectedRefreshRate = 0U;
+    DISPLAYMODE selectedDisplayMode = DISPLAYMODE::NONE;
+    TCHAR       selectedLanguage[MAX_LANG_LENGTH] = {0};
     bool        debugEnabled = false;
 
     HWND        hWnd = NULL;
@@ -153,6 +155,7 @@ private:
     HWND        resolutionComboBox = NULL;
     HWND        refreshRateComboBox = NULL;
     HWND        displayModeComboBox = NULL;
+    HWND        languageComboBox = NULL;
     HWND        debugModeButton = NULL;
 
     HKEY        currentHKey = NULL;
@@ -169,8 +172,14 @@ private:
     VOID        initD3D();
     bool        initMonitorDisplayModes();
 
-    HWND        createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w, UINT ySpacing = 2);
+    HWND        createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w);
     bool        prefillSettingsFromConfig();
+
+    bool        setCurrentHKEY(HKEY hKey);
+    bool        resetHKEY();
+    bool        openRegKey(LPCTSTR lpSubKey, bool write = false);
+    bool        getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData);
+    bool        setRegKeyValue(LPCTSTR lpValue, LPTSTR lpData);
 
     bool        jsonLoadConfig();
     bool        jsonConfigExists();
@@ -191,15 +200,17 @@ public:
     bool        fillResolutionComboBox();
     bool        fillRefreshRateComboBox();
     bool        fillDisplayModeComboBox();
+    bool        fillLanguageComboBox();
 
     bool        fetchSelectedMonitor();
     bool        fetchSelectedResolution();
     bool        fetchSelectedRefreshRate();
     bool        fetchSelectedDisplayMode();
     bool        fetchSelectedDebugMode();
+    bool        fetchSelectedLanguage();
         
     bool        checkSettings();
-    bool        saveConfigFile();
+    bool        save();
 
     ~OniLauncher();
 };

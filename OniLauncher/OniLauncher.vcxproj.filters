@@ -27,9 +27,6 @@
     <ClInclude Include="pch.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="OriLauncher.hpp">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="error.hpp">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
@@ -42,9 +39,6 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="OriLauncher.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="error.cpp">

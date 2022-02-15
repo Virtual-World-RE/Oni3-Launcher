@@ -10,10 +10,11 @@
 #define ID_RESOLUTION                       201
 #define ID_REFRESH_RATE                     202
 #define ID_DISPLAY_MODE                     203
-#define ID_FRAME_PER_SECONDS                204
-#define ID_PLAY                             205
-#define ID_SAVE                             206
-#define ID_DEBUG                            207
+#define ID_GAME_LANG                        204
+#define ID_FRAME_PER_SECONDS                205
+#define ID_PLAY                             206
+#define ID_SAVE                             207
+#define ID_DEBUG                            208
 
 #define IDM_ABOUT                           300
 #define IDM_EXIT                            301
@@ -36,13 +37,14 @@
 #define IDS_DEBUG                           610
 #define IDS_SAVE                            611
 #define IDS_PLAY                            612
+#define IDS_GAME_LANG_DESC                  613
 
-#define IDS_NO_RESOLUTION_SELECTED_TITLE    613
-#define IDS_NO_RESOLUTION_SELECTED_MSG      614
-#define IDS_NO_REFRESH_RATE_SELECTED_TITLE  615
-#define IDS_NO_REFRESH_RATE_SELECTED_MSG    616
-#define IDS_NO_DISPLAY_MODE_SELECTED_TITLE  617
-#define IDS_NO_DISPLAY_MODE_SELECTED_MSG    618
+#define IDSE_NO_RESOLUTION_SELECTED_TITLE    700
+#define IDSE_NO_RESOLUTION_SELECTED_MSG      701
+#define IDSE_NO_REFRESH_RATE_SELECTED_TITLE  702
+#define IDSE_NO_REFRESH_RATE_SELECTED_MSG    703
+#define IDSE_NO_DISPLAY_MODE_SELECTED_TITLE  704
+#define IDSE_NO_DISPLAY_MODE_SELECTED_MSG    705
 
 
 // Next default values for new objects

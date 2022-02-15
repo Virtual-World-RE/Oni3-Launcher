@@ -151,6 +151,11 @@ LRESULT wndProcCommandScreenSettings(HWND hWnd, UINT wmId, UINT iCode)
         oniLauncher.fetchSelectedDisplayMode();
         return 0;
     }
+    case ID_GAME_LANG:
+    {
+        oniLauncher.fetchSelectedLanguage();
+        return 0;
+    }
     }
 
     return 0;
@@ -171,7 +176,7 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
     {
         if (!oniLauncher.checkSettings())
             return 0;
-        if (!oniLauncher.saveConfigFile()) {
+        if (!oniLauncher.save()) {
             showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file.\nTry again !"));
             return 0;
         }
@@ -183,7 +188,7 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
     {
         if (!oniLauncher.checkSettings())
             return 0;
-        if (!oniLauncher.saveConfigFile())
+        if (!oniLauncher.save())
             showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file...\nTry again !"));
         return 0;
     }
@@ -208,6 +213,7 @@ LRESULT wndProcCommand(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case ID_REFRESH_RATE:
     case ID_RESOLUTION:
     case ID_MONITOR:
+    case ID_GAME_LANG:
         return wndProcCommandScreenSettings(hWnd, wmId, iCode);
     case ID_DEBUG:
     case ID_SAVE:
@@ -305,6 +311,24 @@ int d3dDisplayModeCmp(const void *firstD3dDisplayMode, const void *secondD3dDisp
         return -1;
 }
 
+// https://stackoverflow.com/a/8196291/12876357
+BOOL isElevated()
+{
+    BOOL fRet = FALSE;
+    HANDLE hToken = NULL;
+    TOKEN_ELEVATION Elevation;
+    DWORD cbSize = sizeof(TOKEN_ELEVATION);
+
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+        if (GetTokenInformation(hToken, TokenElevation, &Elevation, sizeof(Elevation), &cbSize))
+            fRet = Elevation.TokenIsElevated;
+
+    if (hToken)
+        CloseHandle(hToken);
+
+    return fRet;
+}
+
 OniLauncher::OniLauncher()
 {
     this->initD3D();
@@ -399,17 +423,17 @@ bool OniLauncher::jsonLoadConfig()
         MessageBoxA(hWnd, buffer, "Invalid JSON file", MB_OK | MB_ICONERROR);
     }
 
-    currentMonitor = settings.value<UINT>("monitor", -1);
-    currentResolution.height = settings["resolution"].value<UINT>("height", 0);
-    currentResolution.width = settings["resolution"].value<UINT>("width", 0);
-    currentMode = getMonitorDisplayMode(currentResolution.width, currentResolution.height);
-    currentRefreshRate = settings.value<UINT>("refreshRate", 0);
+    selectedMonitor = settings.value<UINT>("monitor", -1);
+    selectedResolution.height = settings["resolution"].value<UINT>("height", 0);
+    selectedResolution.width = settings["resolution"].value<UINT>("width", 0);
+    selectedMode = getMonitorDisplayMode(selectedResolution.width, selectedResolution.height);
+    selectedRefreshRate = settings.value<UINT>("refreshRate", 0);
     if (settings.value<bool>("borderless", false) == true)
-        currentDisplayMode = DISPLAYMODE::BORDERLESS;
+        selectedDisplayMode = DISPLAYMODE::BORDERLESS;
     if (settings.value<bool>("fullscreen", false) == true)
-        currentDisplayMode = DISPLAYMODE::FULLSCREEN;
+        selectedDisplayMode = DISPLAYMODE::FULLSCREEN;
     if (settings.value<bool>("borderless", false) == false && settings.value<bool>("fullscreen", false) == false)
-        currentDisplayMode = DISPLAYMODE::WINDOWED;
+        selectedDisplayMode = DISPLAYMODE::WINDOWED;
     debugEnabled = settings.value<bool>("debugEnabled", false);
 
     return true;
@@ -439,29 +463,37 @@ bool OniLauncher::jsonConfigExists()
 
 UINT OniLauncher::getMonitorDisplayMode(UINT width, UINT height)
 {
-    for (int i = 0; &d3dDisplayModes[currentMonitor][i]; i++)
-        if (d3dDisplayModes[currentMonitor][i].Width == width && d3dDisplayModes[currentMonitor][i].Height == height)
+    for (int i = 0; &d3dDisplayModes[selectedMonitor][i]; i++)
+        if (d3dDisplayModes[selectedMonitor][i].Width == width && d3dDisplayModes[selectedMonitor][i].Height == height)
             return i;
+    return 0;
 }
 
 VOID OniLauncher::init(HWND hWnd)
 {
+    DWORD vlength = MAX_LANG_LENGTH;
+    TCHAR reg[MAX_PATH] = { 0 };
     TCHAR loadedString[MAX_LOADSTRING];
+
     debugModeButton = NULL;
     monitorComboBox = createComboBoxWithLabel(hWnd, IDS_MONITOR_DESC, ID_MONITOR, 5, 110, 240);
-    resolutionComboBox = createComboBoxWithLabel(hWnd, IDS_RESOLUTION_DESC, ID_RESOLUTION, 5, 160, 130);
-    refreshRateComboBox = createComboBoxWithLabel(hWnd, IDS_REFRESH_DESC, ID_REFRESH_RATE, 140, 160, 105);
-    displayModeComboBox = createComboBoxWithLabel(hWnd, IDS_DISPLAY_MODE_DESC, ID_DISPLAY_MODE, 5, 210, 240);
-    //HWND fpsComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_FRAME_PER_SECONDS, hInst, NULL);
+    resolutionComboBox = createComboBoxWithLabel(hWnd, IDS_RESOLUTION_DESC, ID_RESOLUTION, 5, 154, 130);
+    refreshRateComboBox = createComboBoxWithLabel(hWnd, IDS_REFRESH_DESC, ID_REFRESH_RATE, 140, 154, 105);
+    displayModeComboBox = createComboBoxWithLabel(hWnd, IDS_DISPLAY_MODE_DESC, ID_DISPLAY_MODE, 5, 198, 240);
+    languageComboBox = createComboBoxWithLabel(hWnd, IDS_GAME_LANG_DESC, ID_GAME_LANG, 5, 242, 240);
 
     this->hWnd = hWnd;
 
     LoadString(::hInst, IDS_DEBUG, loadedString, MAX_LOADSTRING);
-    debugModeButton = CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 295, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
+    debugModeButton = CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 300, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
     LoadString(::hInst, IDS_SAVE, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 320, 240, 30, hWnd, (HMENU)ID_SAVE, hInst, NULL);
     LoadString(::hInst, IDS_PLAY, loadedString, MAX_LOADSTRING);
     CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 355, 240, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
+
+    fillLanguageComboBox();
+    getRegKeyValue(TEXT("Language"), reg, &vlength);
+    ComboBox_SelectString(languageComboBox, 0, reg);
 
     fillDisplayModeComboBox();
     fillMonitorComboBox();
@@ -472,7 +504,7 @@ VOID OniLauncher::init(HWND hWnd)
     prefillSettingsFromConfig();
 }
 
-HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w, UINT ySpacing)
+HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w)
 {
     TCHAR lStr[MAX_LOADSTRING];
     HWND hCtl = NULL;
@@ -484,7 +516,7 @@ HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, 
     if (hTxt == NULL)
         return NULL;
 
-    hCtl = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, x, y + ySpacing + 16, w, 0, hWnd, (HMENU)menuId, hInst, NULL);
+    hCtl = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, x, y + 16, w, 0, hWnd, (HMENU)menuId, hInst, NULL);
 
     if (hCtl == NULL)
         return NULL;
@@ -497,15 +529,15 @@ bool OniLauncher::prefillSettingsFromConfig()
     if (!configLoaded)
         return false;
 
-    if (ComboBox_SetCurSel(displayModeComboBox, ComboBox_SelectItemData(displayModeComboBox, 0, (LPARAM)currentDisplayMode)) == CB_ERR)
+    if (ComboBox_SetCurSel(displayModeComboBox, ComboBox_SelectItemData(displayModeComboBox, 0, (LPARAM)selectedDisplayMode)) == CB_ERR)
         return false;
-    if (ComboBox_SetCurSel(monitorComboBox, ComboBox_SelectItemData(monitorComboBox, 0, (LPARAM)currentMonitor)) == CB_ERR)
+    if (ComboBox_SetCurSel(monitorComboBox, ComboBox_SelectItemData(monitorComboBox, 0, (LPARAM)selectedMonitor)) == CB_ERR)
         return false;
     fillResolutionComboBox();
-    if (ComboBox_SetCurSel(resolutionComboBox, ComboBox_SelectItemData(resolutionComboBox, 0, (LPARAM)currentMode)) == CB_ERR)
+    if (ComboBox_SetCurSel(resolutionComboBox, ComboBox_SelectItemData(resolutionComboBox, 0, (LPARAM)selectedMode)) == CB_ERR)
         return false;
     fillRefreshRateComboBox();
-    if (ComboBox_SetCurSel(refreshRateComboBox, ComboBox_SelectItemData(refreshRateComboBox, 0, (LPARAM)currentRefreshRate)) == CB_ERR)
+    if (ComboBox_SetCurSel(refreshRateComboBox, ComboBox_SelectItemData(refreshRateComboBox, 0, (LPARAM)selectedRefreshRate)) == CB_ERR)
         return false;
     if (debugEnabled)
         Button_SetCheck(debugModeButton, BST_CHECKED);
@@ -516,15 +548,15 @@ VOID OniLauncher::resetResolution()
 {
     ComboBox_Enable(resolutionComboBox, FALSE);
     ComboBox_ResetContent(resolutionComboBox);
-    currentResolution.width = 0;
-    currentResolution.height = 0;
+    selectedResolution.width = 0;
+    selectedResolution.height = 0;
 }
 
 VOID OniLauncher::resetRefreshRate()
 {
     ComboBox_Enable(refreshRateComboBox, FALSE);
     ComboBox_ResetContent(refreshRateComboBox);
-    currentRefreshRate = 0;
+    selectedRefreshRate = 0;
 }
 
 bool OniLauncher::fillMonitorComboBox()
@@ -555,16 +587,16 @@ bool OniLauncher::fillResolutionComboBox()
 {
     INT comboBoxIndex;
     TCHAR buffer[UINT_DIGITS * 2 + 4];
-    UINT modes = d3d->GetAdapterModeCount(currentMonitor, D3DFMT_MODE);
+    UINT modes = d3d->GetAdapterModeCount(selectedMonitor, D3DFMT_MODE);
 
     ComboBox_Enable(resolutionComboBox, FALSE);
     ComboBox_ResetContent(resolutionComboBox);
 
     for (UINT i = 0; i < modes; i++) {
-        if (i != 0 && (d3dDisplayModes[currentMonitor][i - 1].Width == d3dDisplayModes[currentMonitor][i].Width && d3dDisplayModes[currentMonitor][i - 1].Height == d3dDisplayModes[currentMonitor][i].Height))
+        if (i != 0 && (d3dDisplayModes[selectedMonitor][i - 1].Width == d3dDisplayModes[selectedMonitor][i].Width && d3dDisplayModes[selectedMonitor][i - 1].Height == d3dDisplayModes[selectedMonitor][i].Height))
             continue;
 
-        _stprintf_s(buffer, UINT_DIGITS * 2 + 4, TEXT("%u x %u"), d3dDisplayModes[currentMonitor][i].Width, d3dDisplayModes[currentMonitor][i].Height);
+        _stprintf_s(buffer, UINT_DIGITS * 2 + 4, TEXT("%u x %u"), d3dDisplayModes[selectedMonitor][i].Width, d3dDisplayModes[selectedMonitor][i].Height);
         comboBoxIndex = ComboBox_AddString(resolutionComboBox, buffer);
 
         if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(resolutionComboBox, comboBoxIndex, (LPARAM)i) == CB_ERR)
@@ -580,19 +612,19 @@ bool OniLauncher::fillRefreshRateComboBox()
 {
     INT comboBoxIndex;
     TCHAR buffer[UINT_DIGITS + 4];
-    UINT modes = d3d->GetAdapterModeCount(currentMonitor, D3DFMT_MODE);
+    UINT modes = d3d->GetAdapterModeCount(selectedMonitor, D3DFMT_MODE);
 
     ComboBox_Enable(refreshRateComboBox, FALSE);
     ComboBox_ResetContent(refreshRateComboBox);
 
-    for (UINT i = currentMode; i < modes; i++) {
-        if (currentResolution.width != d3dDisplayModes[currentMonitor][i].Width || currentResolution.height != d3dDisplayModes[currentMonitor][i].Height)
+    for (UINT i = selectedMode; i < modes; i++) {
+        if (selectedResolution.width != d3dDisplayModes[selectedMonitor][i].Width || selectedResolution.height != d3dDisplayModes[selectedMonitor][i].Height)
             break;
 
-        _stprintf_s(buffer, UINT_DIGITS + 4, TEXT("%u Hz"), d3dDisplayModes[currentMonitor][i].RefreshRate);
+        _stprintf_s(buffer, UINT_DIGITS + 4, TEXT("%u Hz"), d3dDisplayModes[selectedMonitor][i].RefreshRate);
         comboBoxIndex = ComboBox_AddString(refreshRateComboBox, buffer);
 
-        if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(refreshRateComboBox, comboBoxIndex, (LPARAM)d3dDisplayModes[currentMonitor][i].RefreshRate) == CB_ERR)
+        if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(refreshRateComboBox, comboBoxIndex, (LPARAM)d3dDisplayModes[selectedMonitor][i].RefreshRate) == CB_ERR)
             return false;
     }
 
@@ -623,6 +655,24 @@ bool OniLauncher::fillDisplayModeComboBox()
     return true;
 }
 
+bool OniLauncher::fillLanguageComboBox()
+{
+    ComboBox_AddString(languageComboBox, TEXT("Traditional Chinese"));
+    ComboBox_AddString(languageComboBox, TEXT("Simplified Chinese"));
+    ComboBox_AddString(languageComboBox, TEXT("Korean"));
+    ComboBox_AddString(languageComboBox, TEXT("Japanese"));
+    ComboBox_AddString(languageComboBox, TEXT("English"));
+    ComboBox_AddString(languageComboBox, TEXT("French"));
+    ComboBox_AddString(languageComboBox, TEXT("Spanish"));
+    ComboBox_AddString(languageComboBox, TEXT("German"));
+    ComboBox_AddString(languageComboBox, TEXT("Italian"));
+
+    if (isElevated())
+        ComboBox_Enable(languageComboBox, TRUE);
+
+    return true;
+}
+
 bool OniLauncher::fetchSelectedMonitor()
 {
     LRESULT getItemDataStatus = ComboBox_GetItemData(monitorComboBox, ComboBox_GetCurSel(monitorComboBox));
@@ -630,11 +680,11 @@ bool OniLauncher::fetchSelectedMonitor()
     if (getItemDataStatus == CB_ERR)
         return false;
 
-    currentMonitor = (UINT)getItemDataStatus;
+    selectedMonitor = (UINT)getItemDataStatus;
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Selected monitor is %u\n"), currentMonitor);
+    _stprintf_s(debugBuffer, TEXT("Selected monitor is %u\n"), selectedMonitor);
     OutputDebugString(debugBuffer);
     #endif
 
@@ -651,13 +701,13 @@ bool OniLauncher::fetchSelectedResolution()
 
     dmIndex = (UINT)getItemDataStatus;
 
-    currentResolution.width = d3dDisplayModes[currentMonitor][dmIndex].Width;
-    currentResolution.height = d3dDisplayModes[currentMonitor][dmIndex].Height;
-    currentMode = dmIndex;
+    selectedResolution.width = d3dDisplayModes[selectedMonitor][dmIndex].Width;
+    selectedResolution.height = d3dDisplayModes[selectedMonitor][dmIndex].Height;
+    selectedMode = dmIndex;
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Selected resolution is %d x %d\n"), currentResolution.width, currentResolution.height);
+    _stprintf_s(debugBuffer, TEXT("Selected resolution is %d x %d\n"), selectedResolution.width, selectedResolution.height);
     OutputDebugString(debugBuffer);
     #endif
 
@@ -671,11 +721,11 @@ bool OniLauncher::fetchSelectedRefreshRate()
     if (getItemDataStatus == CB_ERR)
         return false;
 
-    currentRefreshRate = (UINT)getItemDataStatus;
+    selectedRefreshRate = (UINT)getItemDataStatus;
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Selected refresh rate is %d\n"), currentRefreshRate);
+    _stprintf_s(debugBuffer, TEXT("Selected refresh rate is %d\n"), selectedRefreshRate);
     OutputDebugString(debugBuffer);
     #endif
 
@@ -689,11 +739,11 @@ bool OniLauncher::fetchSelectedDisplayMode()
     if (getItemDataStatus == CB_ERR)
         return false;
 
-    currentDisplayMode = (DISPLAYMODE)getItemDataStatus;
+    selectedDisplayMode = (DISPLAYMODE)getItemDataStatus;
 
     #ifdef _DEBUG
     TCHAR debugBuffer[256];
-    _stprintf_s(debugBuffer, TEXT("Selected display mode is %s\n"), currentDisplayMode == DISPLAYMODE::BORDERLESS ? TEXT("Borderless") : currentDisplayMode == DISPLAYMODE::FULLSCREEN ? TEXT("Fullscreen") : currentDisplayMode == DISPLAYMODE::WINDOWED ? TEXT("Windowed") : TEXT("Unknown"));
+    _stprintf_s(debugBuffer, TEXT("Selected display mode is %s\n"), selectedDisplayMode == DISPLAYMODE::BORDERLESS ? TEXT("Borderless") : selectedDisplayMode == DISPLAYMODE::FULLSCREEN ? TEXT("Fullscreen") : selectedDisplayMode == DISPLAYMODE::WINDOWED ? TEXT("Windowed") : TEXT("Unknown"));
     OutputDebugString(debugBuffer);
     #endif
 
@@ -713,45 +763,129 @@ bool OniLauncher::fetchSelectedDebugMode()
     return true;
 }
 
+bool OniLauncher::fetchSelectedLanguage()
+{
+    int getTextStatus = ComboBox_GetText(languageComboBox, selectedLanguage, MAX_LANG_LENGTH);
+
+    if (getTextStatus == 0)
+        return false;
+
+    #ifdef _DEBUG
+    TCHAR debugBuffer[256];
+    _stprintf_s(debugBuffer, TEXT("Selected language %s\n"), selectedLanguage);
+    OutputDebugString(debugBuffer);
+    #endif
+
+    return true;
+}
+
+bool OniLauncher::setCurrentHKEY(HKEY hKey)
+{
+    if (currentHKey)
+        resetHKEY();
+
+    currentHKey = hKey;
+
+    return((bool)hKey);
+}
+
+bool OniLauncher::resetHKEY()
+{
+    if (currentHKey && currentHKey != HKEY_CLASSES_ROOT && currentHKey != HKEY_CURRENT_CONFIG && currentHKey != HKEY_CURRENT_USER && currentHKey != HKEY_LOCAL_MACHINE && currentHKey != HKEY_USERS)
+        RegCloseKey(currentHKey);
+
+    currentHKey = 0;
+    return false;
+}
+
+bool OniLauncher::openRegKey(LPCTSTR lpSubKey, bool write)
+{
+    HKEY phkResult = 0;
+
+    LSTATUS regOpenKeyStatus = RegOpenKeyEx(currentHKey, lpSubKey, 0, KEY_WOW64_32KEY | (write ? KEY_WRITE : KEY_READ), &phkResult);
+    SetLastError(regOpenKeyStatus);
+    if (regOpenKeyStatus == ERROR_ACCESS_DENIED)
+        showWinApiErrorMB();
+    if (regOpenKeyStatus != ERROR_SUCCESS)
+        return false;
+
+    resetHKEY();
+    currentHKey = phkResult;
+
+    return true;
+}
+
+bool OniLauncher::getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbData)
+{
+    bool result = false;
+
+    setCurrentHKEY(HKEY_LOCAL_MACHINE);
+
+    if (!openRegKey(TEXT(R"(SOFTWARE\CAPCOM\ONIMUSHA3 PC\1.00.000)")))
+        return false;
+    if (currentHKey && lpValue && lpData)
+        result = (RegGetValue(currentHKey, NULL, lpValue, RRF_RT_REG_SZ, NULL, lpData, lpcbData) == ERROR_SUCCESS);
+    
+    setCurrentHKEY(0);
+
+    return result;
+}
+
+bool OniLauncher::setRegKeyValue(LPCTSTR lpValue, LPTSTR lpData)
+{
+    bool result = false;
+
+    setCurrentHKEY(HKEY_LOCAL_MACHINE);
+
+    if (!openRegKey(TEXT(R"(SOFTWARE\CAPCOM\ONIMUSHA3 PC\1.00.000)"), true))
+        return false;
+    if (currentHKey && lpValue && lpData)
+        result = (RegSetValueEx(currentHKey, lpValue, 0L, REG_SZ, (BYTE *)lpData, sizeof(TCHAR) * (_tcslen(lpData) + 1)));
+
+    setCurrentHKEY(0);
+
+    return result;
+}
+
 bool OniLauncher::checkSettings()
 {
     TCHAR loadedString[2][MAX_LOADSTRING];
 
-    if (currentResolution.width == 0 || currentResolution.height == 0) {
-        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
-        LoadString(::hInst, IDS_NO_RESOLUTION_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
+    if (selectedResolution.width == 0 || selectedResolution.height == 0) {
+        LoadString(::hInst, IDSE_NO_RESOLUTION_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDSE_NO_RESOLUTION_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return false;
     }
-    if (currentRefreshRate == 0) {
-        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
-        LoadString(::hInst, IDS_NO_REFRESH_RATE_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
+    if (selectedRefreshRate == 0) {
+        LoadString(::hInst, IDSE_NO_REFRESH_RATE_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDSE_NO_REFRESH_RATE_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return false;
     }
-    if (currentDisplayMode == DISPLAYMODE::NONE) {
-        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
-        LoadString(::hInst, IDS_NO_DISPLAY_MODE_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
+    if (selectedDisplayMode == DISPLAYMODE::NONE) {
+        LoadString(::hInst, IDSE_NO_DISPLAY_MODE_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDSE_NO_DISPLAY_MODE_SELECTED_MSG, loadedString[1], MAX_LOADSTRING);
         MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
         return false;
     }
     return true;
 }
 
-bool OniLauncher::saveConfigFile()
+bool OniLauncher::save()
 {
     DWORD dwBytesWritten = 0;
     CHAR settingsDump[2048];
     TCHAR szPath[MAX_PATH];
     HANDLE saveFile;
     json settings = json{
-        {"monitor", currentMonitor},
+        {"monitor", selectedMonitor},
         {"resolution", {
-            {"width", currentResolution.width},
-        {"height", currentResolution.height}}},
-        {"refreshRate", currentRefreshRate},
-        {"fullscreen", currentDisplayMode == DISPLAYMODE::FULLSCREEN ? true : false},
-        {"borderless", currentDisplayMode == DISPLAYMODE::BORDERLESS ? true : false},
+            {"width", selectedResolution.width},
+        {"height", selectedResolution.height}}},
+        {"refreshRate", selectedRefreshRate},
+        {"fullscreen", selectedDisplayMode == DISPLAYMODE::FULLSCREEN ? true : false},
+        {"borderless", selectedDisplayMode == DISPLAYMODE::BORDERLESS ? true : false},
         {"debugEnabled", debugEnabled}
     };
 
@@ -764,11 +898,14 @@ bool OniLauncher::saveConfigFile()
     saveFile = CreateFile(szPath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (saveFile == INVALID_HANDLE_VALUE)
         return false;
-    //settings.dump(4).size();
+    
     strcpy_s(settingsDump, 2047, settings.dump(4).c_str());
     WriteFile(saveFile, settingsDump, strlen(settingsDump), &dwBytesWritten, NULL);
 
     CloseHandle(saveFile);
+
+    if (isElevated())
+        setRegKeyValue(TEXT("Language"), selectedLanguage);
 
     #ifdef _DEBUG
     OutputDebugString(TEXT("INFO: Settings are saved\n\n"));
