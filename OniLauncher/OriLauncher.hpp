@@ -9,7 +9,7 @@
 
 #pragma once
 #include "pch.h"
-#include "error.h"
+#include "error.hpp"
 
 class OriLauncher
 {
@@ -34,6 +34,6 @@ private:
     BOOL    checkGamePaths();
 public:
             OriLauncher();
-    BOOL    pseudoWinMain(HWND hWnd);
+    BOOL    pseudoWinMain();
             ~OriLauncher();
 };

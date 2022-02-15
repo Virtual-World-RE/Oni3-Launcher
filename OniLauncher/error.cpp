@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "error.h"
+#include "error.hpp"
 
 INT showWinApiErrorMB(HWND hWnd, LPCTSTR messageBoxTitle)
 {

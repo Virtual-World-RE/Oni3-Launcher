@@ -111,40 +111,9 @@ BOOL CALLBACK SetFont(HWND child, LPARAM font)
 
 LRESULT wndProcCreate(HWND hWnd)
 {
-    TCHAR loadedString[MAX_LOADSTRING];
-    HWND debugModeButton;
-    HWND monitorComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 130, 240, 0, hWnd, (HMENU)ID_MONITOR, hInst, NULL);
-    HWND resolutionComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 180, 130, 0, hWnd, (HMENU)ID_RESOLUTION, hInst, NULL);
-    HWND refreshRateComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 140, 180, 105, 0, hWnd, (HMENU)ID_REFRESH_RATE, hInst, NULL);
-    HWND displayModeComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, 5, 230, 240, 0, hWnd, (HMENU)ID_DISPLAY_MODE, hInst, NULL);
-    //HWND fpsComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_FRAME_PER_SECONDS, hInst, NULL);
+    oniLauncher.init(hWnd);
 
-    LoadString(::hInst, IDS_MONITOR_DESC, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 110, 240, 16, hWnd, NULL, hInst, NULL);
-    LoadString(::hInst, IDS_RESOLUTION_DESC, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 160, 130, 16, hWnd, NULL, hInst, NULL);
-    LoadString(::hInst, IDS_REFRESH_DESC, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 140, 160, 105, 16, hWnd, NULL, hInst, NULL);
-    LoadString(::hInst, IDS_DISPLAY_MODE_DESC, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_STATIC, loadedString, DEFAULT_STYLE, 5, 210, 240, 16, hWnd, NULL, hInst, NULL);
-
-    LoadString(::hInst, IDS_DEBUG, loadedString, MAX_LOADSTRING);
-    debugModeButton = CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 295, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
-    LoadString(::hInst, IDS_SAVE, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 320, 240, 30, hWnd, (HMENU)ID_SAVE, hInst, NULL);
-    LoadString(::hInst, IDS_PLAY, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 355, 240, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
-
-    EnumChildWindows(hWnd, (WNDENUMPROC)SetFont, (LPARAM)GetStockObject(DEFAULT_GUI_FONT));
-
-    oniLauncher.setHandlers(hWnd, monitorComboBox, resolutionComboBox, refreshRateComboBox, displayModeComboBox, debugModeButton);
-    oniLauncher.fillMonitorComboBox();
-    oniLauncher.fillDisplayModeComboBox();
-
-    ComboBox_SetCurSel(monitorComboBox, 0);
-    oniLauncher.fillResolutionComboBox();
-
-    oniLauncher.prefillSettingsFromConfig();
+    EnumChildWindows(hWnd, (WNDENUMPROC)SetFont, (LPARAM)GetStockObject(DEFAULT_GUI_FONT));   
 
     return 0;
 }
@@ -202,8 +171,10 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
     {
         if (!oniLauncher.checkSettings())
             return 0;
-        if (!oniLauncher.saveConfigFile())
-            showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file."));
+        if (!oniLauncher.saveConfigFile()) {
+            showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file.\nTry again !"));
+            return 0;
+        }
         //oriLauncher.pseudoWinMain(hWnd);
         PostQuitMessage(0);
         return 0;
@@ -473,14 +444,52 @@ UINT OniLauncher::getMonitorDisplayMode(UINT width, UINT height)
             return i;
 }
 
-VOID OniLauncher::setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND displayModeComboBox, HWND debugModeButton)
+VOID OniLauncher::init(HWND hWnd)
 {
+    TCHAR loadedString[MAX_LOADSTRING];
+    debugModeButton = NULL;
+    monitorComboBox = createComboBoxWithLabel(hWnd, IDS_MONITOR_DESC, ID_MONITOR, 5, 110, 240);
+    resolutionComboBox = createComboBoxWithLabel(hWnd, IDS_RESOLUTION_DESC, ID_RESOLUTION, 5, 160, 130);
+    refreshRateComboBox = createComboBoxWithLabel(hWnd, IDS_REFRESH_DESC, ID_REFRESH_RATE, 140, 160, 105);
+    displayModeComboBox = createComboBoxWithLabel(hWnd, IDS_DISPLAY_MODE_DESC, ID_DISPLAY_MODE, 5, 210, 240);
+    //HWND fpsComboBox = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX, 5, 250, 240, 200, hWnd, (HMENU)ID_FRAME_PER_SECONDS, hInst, NULL);
+
     this->hWnd = hWnd;
-    this->monitorComboBox = monitorComboBox;
-    this->resolutionComboBox = resolutionComboBox;
-    this->refreshRateComboBox = refreshRateComboBox;
-    this->displayModeComboBox = displayModeComboBox;
-    this->debugModeButton = debugModeButton;
+
+    LoadString(::hInst, IDS_DEBUG, loadedString, MAX_LOADSTRING);
+    debugModeButton = CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 295, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
+    LoadString(::hInst, IDS_SAVE, loadedString, MAX_LOADSTRING);
+    CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 320, 240, 30, hWnd, (HMENU)ID_SAVE, hInst, NULL);
+    LoadString(::hInst, IDS_PLAY, loadedString, MAX_LOADSTRING);
+    CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 355, 240, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
+
+    fillDisplayModeComboBox();
+    fillMonitorComboBox();
+
+    ComboBox_SetCurSel(monitorComboBox, 0);
+    
+    fillResolutionComboBox();
+    prefillSettingsFromConfig();
+}
+
+HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w, UINT ySpacing)
+{
+    TCHAR lStr[MAX_LOADSTRING];
+    HWND hCtl = NULL;
+    HWND hTxt = NULL;
+
+    LoadString(NULL, textUID, lStr, MAX_LOADSTRING);
+    hTxt = CreateWindow(WC_STATIC, lStr, DEFAULT_STYLE, x, y, w, 30, hWnd, NULL, NULL, NULL);
+
+    if (hTxt == NULL)
+        return NULL;
+
+    hCtl = CreateWindow(WC_COMBOBOX, TEXT(""), DROPDOWN_COMBO_BOX | WS_DISABLED, x, y + ySpacing + 16, w, 0, hWnd, (HMENU)menuId, hInst, NULL);
+
+    if (hCtl == NULL)
+        return NULL;
+
+    return hCtl;
 }
 
 bool OniLauncher::prefillSettingsFromConfig()
@@ -524,6 +533,10 @@ bool OniLauncher::fillMonitorComboBox()
     TCHAR buffer[MAX_LOADSTRING + 1 + UINT_DIGITS];
     TCHAR monitorStr[MAX_LOADSTRING];
     UINT monitors = d3d->GetAdapterCount();
+
+    ComboBox_Enable(monitorComboBox, FALSE);
+    ComboBox_ResetContent(monitorComboBox);
+
     LoadString(::hInst, IDS_MONITOR, monitorStr, MAX_LOADSTRING);
 
     for (UINT i = 0; i < monitors; i++) {
@@ -533,7 +546,7 @@ bool OniLauncher::fillMonitorComboBox()
         if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(monitorComboBox, comboBoxIndex, (LPARAM)i) == CB_ERR)
             return false;
     }
-
+    
     ComboBox_Enable(monitorComboBox, TRUE);
     return true;
 }
@@ -547,7 +560,7 @@ bool OniLauncher::fillResolutionComboBox()
     ComboBox_Enable(resolutionComboBox, FALSE);
     ComboBox_ResetContent(resolutionComboBox);
 
-    for (int i = 0; i < modes; i++) {
+    for (UINT i = 0; i < modes; i++) {
         if (i != 0 && (d3dDisplayModes[currentMonitor][i - 1].Width == d3dDisplayModes[currentMonitor][i].Width && d3dDisplayModes[currentMonitor][i - 1].Height == d3dDisplayModes[currentMonitor][i].Height))
             continue;
 
@@ -572,7 +585,7 @@ bool OniLauncher::fillRefreshRateComboBox()
     ComboBox_Enable(refreshRateComboBox, FALSE);
     ComboBox_ResetContent(refreshRateComboBox);
 
-    for (int i = currentMode; i < modes; i++) {
+    for (UINT i = currentMode; i < modes; i++) {
         if (currentResolution.width != d3dDisplayModes[currentMonitor][i].Width || currentResolution.height != d3dDisplayModes[currentMonitor][i].Height)
             break;
 

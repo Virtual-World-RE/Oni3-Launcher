@@ -30,7 +30,7 @@
     <ClInclude Include="OriLauncher.hpp">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="error.h">
+    <ClInclude Include="error.hpp">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="windowsx_bugfix.hpp">

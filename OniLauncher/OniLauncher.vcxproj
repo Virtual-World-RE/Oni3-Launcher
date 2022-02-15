@@ -175,7 +175,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="error.h" />
+    <ClInclude Include="error.hpp" />
     <ClInclude Include="windowsx_bugfix.hpp" />
     <ClInclude Include="OniLauncher.hpp" />
     <ClInclude Include="OriLauncher.hpp" />

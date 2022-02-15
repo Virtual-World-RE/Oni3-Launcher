@@ -22,7 +22,7 @@
 #endif
 
 #include "pch.h"
-#include "error.h"
+#include "error.hpp"
 #include "Resource.h"
 #include "windowsx_bugfix.hpp"
 
@@ -56,7 +56,7 @@ typedef struct
  /// <summary>
  /// The Application Entry Point
  /// </summary>
- /// <param name="hInstance">is something called a "handle to an instance" or "handle to a module". The operating system uses this value to identify the executable (EXE) when it is loaded in memory. The instance handle is needed for certain Windows functions—for example, to load icons or bitmaps.</param>
+ /// <param name="hInstance">is something called a "handle to an instance" or "handle to a module". The operating system uses this value to identify the executable (EXE) when it is loaded in memory. The instance handle is needed for certain Windows functionsï¿½for example, to load icons or bitmaps.</param>
  /// <param name="hPrevInstance">has no meaning. It was used in 16-bit Windows, but is now always zero.</param>
  /// <param name="pCmdLine">contains the command-line arguments as a Unicode string.</param>
  /// <param name="nCmdShow">is a flag that says whether the main application window will be minimized, maximized, or shown normally.</param>
@@ -169,6 +169,9 @@ private:
     VOID        initD3D();
     bool        initMonitorDisplayModes();
 
+    HWND        createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w, UINT ySpacing = 2);
+    bool        prefillSettingsFromConfig();
+
     bool        jsonLoadConfig();
     bool        jsonConfigExists();
 
@@ -176,14 +179,11 @@ private:
     VOID        destroyD3D();
 public:
     OniLauncher();
+    VOID        init(HWND hWnd);
 
     UINT        getMonitorDisplayMode(UINT width, UINT height);
-
     bool        startGameWithPatch();
 
-    VOID        setHandlers(HWND hWnd, HWND monitorComboBox, HWND resolutionComboBox, HWND refreshRateComboBox, HWND fullscreenComboBox, HWND debugModeButton);
-    bool        prefillSettingsFromConfig();
-                
     VOID        resetResolution();
     VOID        resetRefreshRate();
                 
