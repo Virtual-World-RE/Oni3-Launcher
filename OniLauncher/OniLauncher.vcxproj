@@ -176,6 +176,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="error.hpp" />
+    <ClInclude Include="Injector.hpp" />
     <ClInclude Include="windowsx_bugfix.hpp" />
     <ClInclude Include="OniLauncher.hpp" />
     <ClInclude Include="pch.h" />
@@ -184,6 +185,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="error.cpp" />
+    <ClCompile Include="Injector.cpp" />
     <ClCompile Include="windowsx_bugfix.cpp" />
     <ClCompile Include="OniLauncher.cpp" />
     <ClCompile Include="pch.cpp" />

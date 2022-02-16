@@ -170,13 +170,21 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
     }
     case ID_PLAY:
     {
-        if (!oniLauncher.checkSettings() || !oniLauncher.checkGame())
+        TCHAR loadedString[2][MAX_LOADSTRING] = { 0 };
+
+        if (!oniLauncher.checkSettings())
             return 0;
+        if (!oniLauncher.checkGamePaths()) {
+            LoadString(::hInst, IDSE_GAME_NOT_FOUND_TITLE, loadedString[0], MAX_LOADSTRING);
+            LoadString(::hInst, IDSE_GAME_NOT_FOUND_MSG, loadedString[1], MAX_LOADSTRING);
+            MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+            return 0;
+        }
         if (!oniLauncher.save()) {
             showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file.\nTry again !"));
             return 0;
         }
-        //oriLauncher.pseudoWinMain(hWnd);
+        oniLauncher.startGameWithPatch();
         PostQuitMessage(0);
         return 0;
     }
@@ -377,46 +385,8 @@ bool OniLauncher::initMonitorDisplayModes()
 
 bool OniLauncher::startGameWithPatch()
 {
-    HANDLE oni3GameExeFileHandler = NULL;
-    bool oni3ProcessCreated = false;
-    STARTUPINFO oni3GameSI = { 0 };
-    PROCESS_INFORMATION oni3GamePI = { 0 };
-
-    SecureZeroMemory(&oni3GameSI, sizeof(STARTUPINFO));
-    SecureZeroMemory(&oni3GamePI, sizeof(PROCESS_INFORMATION));
-
-    oni3GameSI.cb = sizeof(STARTUPINFO);
-
-    oni3GameExeFileHandler = CreateFile(oni3GameExePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
-
-    if (oni3GameExeFileHandler == INVALID_HANDLE_VALUE) {
-        showWinApiErrorMB(hWnd, TEXT("Error opening game executable"));
-        return false;
-    }
-
-    oni3ProcessCreated = CreateProcess(oni3GameExePath, NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, oni3GamePath, &oni3GameSI, &oni3GamePI);
-    WaitForSingleObject(oni3GamePI.hProcess, INFINITE);
-
-    if (oni3GamePI.hProcess != NULL) {
-        if (!CloseHandle(oni3GamePI.hProcess))
-            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hProcess Error"));
-        else
-            oni3GamePI.hProcess = NULL;
-    }
-    if (oni3GamePI.hThread != NULL) {
-        if (!CloseHandle(oni3GamePI.hThread))
-            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hThread Error"));
-        else
-            oni3GamePI.hThread = NULL;
-    }
-    if (oni3GameExeFileHandler != NULL) {
-        if (!CloseHandle(oni3GameExeFileHandler))
-            showWinApiErrorMB(NULL, TEXT("CloseHandle Game Exe File Error"));
-        else
-            oni3GameExeFileHandler = NULL;
-    }
-
-    return true;
+    Injector oniInjector = Injector(oni3GamePath, TEXT("oni3.exe"), "onipatch.dll");
+    return oniInjector.RunAndInject();
 }
 
 bool OniLauncher::jsonLoadConfig()
@@ -520,21 +490,24 @@ VOID OniLauncher::init(HWND hWnd)
     fillLanguageComboBox();
     fillDisplayModeComboBox();
     fillMonitorComboBox();
-
-    ComboBox_SetCurSel(monitorComboBox, 0);
-
-    fillResolutionComboBox();
     prefillSettings();
 
-    getRegKeyValue(TEXT("InstallPath"), oni3GamePath, &oni3GamePathLength);
+    GetCurrentDirectory(MAX_PATH, oni3GamePath);
+    StringCchCopy(oni3GameExePath, MAX_PATH, oni3GamePath);
+    PathCchAppend(oni3GameExePath, MAX_PATH, TEXT(R"(\oni3.exe)"));
+
+    if (!checkGamePaths())
+        getRegKeyValue(TEXT("InstallPath"), oni3GamePath, &oni3GamePathLength);
 
     StringCchCopy(oni3GameExePath, MAX_PATH, oni3GamePath);
     PathCchAppend(oni3GameExePath, MAX_PATH, TEXT(R"(\oni3.exe)"));
 
+    #ifdef _DEBUG
     OutputDebugString(oni3GamePath);
     OutputDebugString(TEXT("\n"));
     OutputDebugString(oni3GameExePath);
     OutputDebugString(TEXT("\n\n"));
+    #endif
 }
 
 HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w)
@@ -570,12 +543,14 @@ bool OniLauncher::prefillSettings()
             return false;
     }
 
+    if (ComboBox_SetCurSel(monitorComboBox, ComboBox_SelectItemData(monitorComboBox, 0, (LPARAM)selectedMonitor)) == CB_ERR)
+        return false;
+
+    fillResolutionComboBox();
+
     if (!configLoaded)
         return false;
 
-    if (ComboBox_SetCurSel(monitorComboBox, ComboBox_SelectItemData(monitorComboBox, 0, (LPARAM)selectedMonitor)) == CB_ERR)
-        return false;
-    fillResolutionComboBox();
     if (ComboBox_SetCurSel(resolutionComboBox, ComboBox_SelectItemData(resolutionComboBox, 0, (LPARAM)selectedMode)) == CB_ERR)
         return false;
     fillRefreshRateComboBox();
@@ -892,23 +867,12 @@ bool OniLauncher::setRegKeyValue(LPCTSTR lpValue, LPTSTR lpData)
     return result;
 }
 
-bool OniLauncher::checkGame()
+bool OniLauncher::checkGamePaths()
 {
-    TCHAR loadedString[2][MAX_LOADSTRING] = { 0 };
-
-    if (!PathFileExists(oni3GamePath) || !PathIsDirectory(oni3GamePath)) {
-        LoadString(::hInst, IDSE_GAME_NOT_FOUND_TITLE, loadedString[0], MAX_LOADSTRING);
-        LoadString(::hInst, IDSE_GAME_NOT_FOUND_MSG, loadedString[1], MAX_LOADSTRING);
-        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+    if (!PathFileExists(oni3GamePath) || !PathIsDirectory(oni3GamePath))
         return false;
-    }
-
-    if (!PathFileExists(oni3GameExePath) || PathIsDirectory(oni3GameExePath)) {
-        LoadString(::hInst, IDSE_GAME_NOT_FOUND_TITLE, loadedString[0], MAX_LOADSTRING);
-        LoadString(::hInst, IDSE_GAME_NOT_FOUND_MSG, loadedString[1], MAX_LOADSTRING);
-        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+    if (!PathFileExists(oni3GameExePath) || PathIsDirectory(oni3GameExePath))
         return false;
-    }
 
     return true;
 }
