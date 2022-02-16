@@ -18,6 +18,7 @@
 
 #define IDM_ABOUT                           300
 #define IDM_EXIT                            301
+#define IDM_ADVANCED                        302
 
 #define IDI_ONILAUNCHER                     400
 #define IDI_SMALL                           401
@@ -45,6 +46,8 @@
 #define IDSE_NO_REFRESH_RATE_SELECTED_MSG    703
 #define IDSE_NO_DISPLAY_MODE_SELECTED_TITLE  704
 #define IDSE_NO_DISPLAY_MODE_SELECTED_MSG    705
+#define IDSE_GAME_NOT_FOUND_TITLE  706
+#define IDSE_GAME_NOT_FOUND_MSG    707
 
 // Next default values for new objects
 //

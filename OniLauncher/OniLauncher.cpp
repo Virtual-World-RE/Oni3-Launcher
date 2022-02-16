@@ -11,8 +11,6 @@
 
  // Global variables:
 HINSTANCE hInst;                                // Global instance.
-TCHAR szTitle[MAX_LOADSTRING];                  // Windows main title.
-TCHAR szWindowClass[MAX_LOADSTRING];            // Main class name.
 
 OniLauncher oniLauncher;
 
@@ -20,6 +18,8 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 {
     MSG msg;
     HACCEL hAccelTable;
+    TCHAR szTitle[MAX_LOADSTRING];
+    TCHAR szWindowClass[MAX_LOADSTRING];
 
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(pCmdLine);
@@ -27,10 +27,10 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadString(hInstance, IDS_ONILAUNCHER, szWindowClass, MAX_LOADSTRING);
 
-    if (!MainWindowRegisterClass(hInstance))
+    if (!WindowRegisterClass(hInstance, WndProc, MAKEINTRESOURCE(IDS_ONILAUNCHER), szWindowClass))
         return false;
 
-    if (!InitInstance(hInstance, nCmdShow))
+    if (!InitInstance(hInstance, nCmdShow, szTitle, szWindowClass))
         return false;
 
     hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDS_ONILAUNCHER));
@@ -47,20 +47,20 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     return (int)msg.wParam;
 }
 
-bool MainWindowRegisterClass(HINSTANCE hInstance)
+bool WindowRegisterClass(HINSTANCE hInstance, WNDPROC lpfnWndProc, LPCTSTR lpszMenuName, LPCTSTR szWindowClass)
 {
-    WNDCLASSEX wcex;
+    WNDCLASSEX wcex = { 0 };
 
     wcex.cbSize = sizeof(WNDCLASSEX);
     wcex.style = 0;
-    wcex.lpfnWndProc = WndProc;
+    wcex.lpfnWndProc = lpfnWndProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = hInstance;
     wcex.hIcon = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ONILAUNCHER));
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszMenuName = MAKEINTRESOURCE(IDS_ONILAUNCHER);
+    wcex.lpszMenuName = lpszMenuName;
     wcex.lpszClassName = szWindowClass;
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -72,12 +72,11 @@ bool MainWindowRegisterClass(HINSTANCE hInstance)
     return true;
 }
 
-bool InitInstance(HINSTANCE hInstance, int nCmdShow)
+bool InitInstance(HINSTANCE hInstance, int nCmdShow, LPCTSTR szTitle, LPCTSTR szWindowClass)
 {
-    RECT rect;
+    RECT rect = { 0 };
     HWND hWnd;
 
-    SecureZeroMemory(&rect, sizeof(RECT));
     rect.bottom = MAIN_WINDOW_HEIGHT;
     rect.right = MAIN_WINDOW_WIDTH;
 
@@ -171,7 +170,7 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
     }
     case ID_PLAY:
     {
-        if (!oniLauncher.checkSettings())
+        if (!oniLauncher.checkSettings() || !oniLauncher.checkGame())
             return 0;
         if (!oniLauncher.save()) {
             showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file.\nTry again !"));
@@ -306,6 +305,8 @@ int d3dDisplayModeCmp(const void *firstD3dDisplayMode, const void *secondD3dDisp
         return 1;
     if (wDiff < 0)
         return -1;
+
+    return 0;
 }
 
 // https://stackoverflow.com/a/8196291/12876357
@@ -313,7 +314,7 @@ BOOL isElevated()
 {
     BOOL fRet = FALSE;
     HANDLE hToken = NULL;
-    TOKEN_ELEVATION Elevation;
+    TOKEN_ELEVATION Elevation = { 0 };
     DWORD cbSize = sizeof(TOKEN_ELEVATION);
 
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
@@ -376,6 +377,16 @@ bool OniLauncher::initMonitorDisplayModes()
 
 bool OniLauncher::startGameWithPatch()
 {
+    HANDLE oni3GameExeFileHandler = NULL;
+    bool oni3ProcessCreated = false;
+    STARTUPINFO oni3GameSI = { 0 };
+    PROCESS_INFORMATION oni3GamePI = { 0 };
+
+    SecureZeroMemory(&oni3GameSI, sizeof(STARTUPINFO));
+    SecureZeroMemory(&oni3GamePI, sizeof(PROCESS_INFORMATION));
+
+    oni3GameSI.cb = sizeof(STARTUPINFO);
+
     oni3GameExeFileHandler = CreateFile(oni3GameExePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 
     if (oni3GameExeFileHandler == INVALID_HANDLE_VALUE) {
@@ -385,6 +396,25 @@ bool OniLauncher::startGameWithPatch()
 
     oni3ProcessCreated = CreateProcess(oni3GameExePath, NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, oni3GamePath, &oni3GameSI, &oni3GamePI);
     WaitForSingleObject(oni3GamePI.hProcess, INFINITE);
+
+    if (oni3GamePI.hProcess != NULL) {
+        if (!CloseHandle(oni3GamePI.hProcess))
+            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hProcess Error"));
+        else
+            oni3GamePI.hProcess = NULL;
+    }
+    if (oni3GamePI.hThread != NULL) {
+        if (!CloseHandle(oni3GamePI.hThread))
+            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hThread Error"));
+        else
+            oni3GamePI.hThread = NULL;
+    }
+    if (oni3GameExeFileHandler != NULL) {
+        if (!CloseHandle(oni3GameExeFileHandler))
+            showWinApiErrorMB(NULL, TEXT("CloseHandle Game Exe File Error"));
+        else
+            oni3GameExeFileHandler = NULL;
+    }
 
     return true;
 }
@@ -468,7 +498,8 @@ UINT OniLauncher::getMonitorDisplayMode(UINT width, UINT height)
 
 VOID OniLauncher::init(HWND hWnd)
 {
-    TCHAR loadedString[MAX_LOADSTRING];
+    DWORD oni3GamePathLength = MAX_PATH;
+    TCHAR loadedString[2][MAX_LOADSTRING] = { 0 };
 
     debugModeButton = NULL;
     monitorComboBox = createComboBoxWithLabel(hWnd, IDS_MONITOR_DESC, ID_MONITOR, 5, 110, 240);
@@ -479,12 +510,12 @@ VOID OniLauncher::init(HWND hWnd)
 
     this->hWnd = hWnd;
 
-    LoadString(::hInst, IDS_DEBUG, loadedString, MAX_LOADSTRING);
-    debugModeButton = CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 300, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
-    LoadString(::hInst, IDS_SAVE, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 320, 240, 30, hWnd, (HMENU)ID_SAVE, hInst, NULL);
-    LoadString(::hInst, IDS_PLAY, loadedString, MAX_LOADSTRING);
-    CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 355, 240, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
+    LoadString(::hInst, IDS_DEBUG, loadedString[0], MAX_LOADSTRING);
+    debugModeButton = CreateWindow(WC_BUTTON, loadedString[0], DEFAULT_STYLE | BS_AUTOCHECKBOX, 5, 300, 240, 20, hWnd, (HMENU)ID_DEBUG, hInst, NULL);
+    LoadString(::hInst, IDS_SAVE, loadedString[0], MAX_LOADSTRING);
+    CreateWindow(WC_BUTTON, loadedString[0], DEFAULT_STYLE, 5, 320, 240, 30, hWnd, (HMENU)ID_SAVE, hInst, NULL);
+    LoadString(::hInst, IDS_PLAY, loadedString[0], MAX_LOADSTRING);
+    CreateWindow(WC_BUTTON, loadedString[0], DEFAULT_STYLE, 5, 355, 240, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
 
     fillLanguageComboBox();
     fillDisplayModeComboBox();
@@ -494,6 +525,16 @@ VOID OniLauncher::init(HWND hWnd)
 
     fillResolutionComboBox();
     prefillSettings();
+
+    getRegKeyValue(TEXT("InstallPath"), oni3GamePath, &oni3GamePathLength);
+
+    StringCchCopy(oni3GameExePath, MAX_PATH, oni3GamePath);
+    PathCchAppend(oni3GameExePath, MAX_PATH, TEXT(R"(\oni3.exe)"));
+
+    OutputDebugString(oni3GamePath);
+    OutputDebugString(TEXT("\n"));
+    OutputDebugString(oni3GameExePath);
+    OutputDebugString(TEXT("\n\n"));
 }
 
 HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w)
@@ -851,9 +892,30 @@ bool OniLauncher::setRegKeyValue(LPCTSTR lpValue, LPTSTR lpData)
     return result;
 }
 
+bool OniLauncher::checkGame()
+{
+    TCHAR loadedString[2][MAX_LOADSTRING] = { 0 };
+
+    if (!PathFileExists(oni3GamePath) || !PathIsDirectory(oni3GamePath)) {
+        LoadString(::hInst, IDSE_GAME_NOT_FOUND_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDSE_GAME_NOT_FOUND_MSG, loadedString[1], MAX_LOADSTRING);
+        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+        return false;
+    }
+
+    if (!PathFileExists(oni3GameExePath) || PathIsDirectory(oni3GameExePath)) {
+        LoadString(::hInst, IDSE_GAME_NOT_FOUND_TITLE, loadedString[0], MAX_LOADSTRING);
+        LoadString(::hInst, IDSE_GAME_NOT_FOUND_MSG, loadedString[1], MAX_LOADSTRING);
+        MessageBox(hWnd, loadedString[1], loadedString[0], MB_OK | MB_ICONERROR);
+        return false;
+    }
+
+    return true;
+}
+
 bool OniLauncher::checkSettings()
 {
-    TCHAR loadedString[2][MAX_LOADSTRING];
+    TCHAR loadedString[2][MAX_LOADSTRING] = { 0 };
 
     if (selectedResolution.width == 0 || selectedResolution.height == 0) {
         LoadString(::hInst, IDSE_NO_RESOLUTION_SELECTED_TITLE, loadedString[0], MAX_LOADSTRING);

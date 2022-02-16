@@ -27,7 +27,7 @@
 #include "windowsx_bugfix.hpp"
 
 #define MAX_LANG_LENGTH 32
-#define MAX_LOADSTRING 100
+#define MAX_LOADSTRING 200
 #define MAX_STRERROR_S_LENGTH 94
 #define UINT_DIGITS 10
 
@@ -70,11 +70,12 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 ///   Register Main Window Class
 /// </summary>
 /// <param name="hInstance"></param>
+/// <param name="lpfnWndProc"></param>
 /// <returns>
 ///   <para>FALSE if failed.</para>
 ///   <para>TRUE if succeed.</para>
 /// </returns>
-bool                MainWindowRegisterClass(HINSTANCE hInstance);
+bool                WindowRegisterClass(HINSTANCE hInstance, WNDPROC lpfnWndProc, LPCTSTR lpszMenuName, LPCTSTR szWindowClass);
 
 /// <summary>
 ///   <para>Create a main window.</para>
@@ -86,7 +87,7 @@ bool                MainWindowRegisterClass(HINSTANCE hInstance);
 ///   <para>FALSE if failed.</para>
 ///   <para>TRUE if succeed.</para>
 /// </returns>
-bool                InitInstance(HINSTANCE hinstance, int nCmdShow);
+bool                InitInstance(HINSTANCE hinstance, int nCmdShow, LPCTSTR szTitle, LPCTSTR szWindowClass);
 
 /// <summary>
 ///   <para>Set a given font for a given handler.</para>
@@ -137,13 +138,15 @@ enum class DISPLAYMODE : UINT
 class OniLauncher
 {
 private:
-    bool        configLoaded = false;
-    LPDIRECT3D9 d3d = NULL;
+    bool            configLoaded = false;
+    LPDIRECT3D9     d3d = NULL;
     D3DDISPLAYMODE **d3dDisplayModes = NULL;
+
+    TCHAR       oni3GamePath[MAX_PATH] = { 0 };
+    TCHAR       oni3GameExePath[MAX_PATH] = { 0 };
 
     UINT        selectedMonitor = 0U;
     UINT        selectedMode = 0U;
-    //TODO replace selectedResolution and selectedRefreshRate by a single d3dDisplayMode
     RESOLUTION  selectedResolution = { 0U, 0U };
     UINT        selectedRefreshRate = 0U;
     DISPLAYMODE selectedDisplayMode = DISPLAYMODE::NONE;
@@ -159,15 +162,6 @@ private:
     HWND        debugModeButton = NULL;
 
     HKEY        currentHKey = NULL;
-    bool        oni3ProcessCreated = false;
-    DWORD       oni3GamePathLength = 0UL;
-    HANDLE      oni3GameExeFileHandler = NULL;
-
-    STARTUPINFO         oni3GameSI;
-    PROCESS_INFORMATION oni3GamePI;
-
-    TCHAR       oni3GameExePath[MAX_PATH];
-    TCHAR       oni3GamePath[MAX_PATH];
 
     VOID        initD3D();
     bool        initMonitorDisplayModes();
@@ -209,6 +203,7 @@ public:
     bool        fetchSelectedDebugMode();
     bool        fetchSelectedLanguage();
 
+    bool        checkGame();
     bool        checkSettings();
     bool        save();
 
