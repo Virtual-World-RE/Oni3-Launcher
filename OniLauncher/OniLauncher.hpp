@@ -25,6 +25,7 @@
 #include "error.hpp"
 #include "Resource.h"
 #include "windowsx_bugfix.hpp"
+#include "Injector.hpp"
 
 #define MAX_LANG_LENGTH 32
 #define MAX_LOADSTRING 200

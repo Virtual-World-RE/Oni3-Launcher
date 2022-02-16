@@ -176,7 +176,7 @@ LRESULT wndProcCommandButtonAction(HWND hWnd, UINT wmId, UINT iCode)
             showWinApiErrorMB(hWnd, TEXT("Error saving the configuration file.\nTry again !"));
             return 0;
         }
-        //oriLauncher.pseudoWinMain(hWnd);
+        oniLauncher.startGameWithPatch();
         PostQuitMessage(0);
         return 0;
     }
@@ -377,46 +377,8 @@ bool OniLauncher::initMonitorDisplayModes()
 
 bool OniLauncher::startGameWithPatch()
 {
-    HANDLE oni3GameExeFileHandler = NULL;
-    bool oni3ProcessCreated = false;
-    STARTUPINFO oni3GameSI = { 0 };
-    PROCESS_INFORMATION oni3GamePI = { 0 };
-
-    SecureZeroMemory(&oni3GameSI, sizeof(STARTUPINFO));
-    SecureZeroMemory(&oni3GamePI, sizeof(PROCESS_INFORMATION));
-
-    oni3GameSI.cb = sizeof(STARTUPINFO);
-
-    oni3GameExeFileHandler = CreateFile(oni3GameExePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
-
-    if (oni3GameExeFileHandler == INVALID_HANDLE_VALUE) {
-        showWinApiErrorMB(hWnd, TEXT("Error opening game executable"));
-        return false;
-    }
-
-    oni3ProcessCreated = CreateProcess(oni3GameExePath, NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, oni3GamePath, &oni3GameSI, &oni3GamePI);
-    WaitForSingleObject(oni3GamePI.hProcess, INFINITE);
-
-    if (oni3GamePI.hProcess != NULL) {
-        if (!CloseHandle(oni3GamePI.hProcess))
-            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hProcess Error"));
-        else
-            oni3GamePI.hProcess = NULL;
-    }
-    if (oni3GamePI.hThread != NULL) {
-        if (!CloseHandle(oni3GamePI.hThread))
-            showWinApiErrorMB(NULL, TEXT("CloseHandle ProcessInfo hThread Error"));
-        else
-            oni3GamePI.hThread = NULL;
-    }
-    if (oni3GameExeFileHandler != NULL) {
-        if (!CloseHandle(oni3GameExeFileHandler))
-            showWinApiErrorMB(NULL, TEXT("CloseHandle Game Exe File Error"));
-        else
-            oni3GameExeFileHandler = NULL;
-    }
-
-    return true;
+    Injector oniInjector = Injector(oni3GamePath, TEXT("oni3.exe"), "onipatch.dll");
+    return oniInjector.RunAndInject();
 }
 
 bool OniLauncher::jsonLoadConfig()

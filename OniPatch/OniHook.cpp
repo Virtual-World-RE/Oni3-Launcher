@@ -104,7 +104,6 @@ void OniHook::Hook()
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-
     DetourAttach((PVOID *)&TrueDirect3DCreate9, MyDirect3DCreate9);
     DetourAttach((PVOID *)&TrueCreateWindowExW, MyCreateWindowExW);
 
