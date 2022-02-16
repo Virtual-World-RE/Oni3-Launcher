@@ -49,19 +49,19 @@ typedef struct
 } RESOLUTION;
 
 #ifdef UNICODE
-  #define WINMAIN wWinMain
+#define WINMAIN wWinMain
 #else
-  #define WINMAIN WinMain
+#define WINMAIN WinMain
 #endif
 
- /// <summary>
- /// The Application Entry Point
- /// </summary>
- /// <param name="hInstance">is something called a "handle to an instance" or "handle to a module". The operating system uses this value to identify the executable (EXE) when it is loaded in memory. The instance handle is needed for certain Windows functions�for example, to load icons or bitmaps.</param>
- /// <param name="hPrevInstance">has no meaning. It was used in 16-bit Windows, but is now always zero.</param>
- /// <param name="pCmdLine">contains the command-line arguments as a Unicode string.</param>
- /// <param name="nCmdShow">is a flag that says whether the main application window will be minimized, maximized, or shown normally.</param>
- /// <returns>The return value is not used by the operating system, but you can use the return value to convey a status code to some other program that you write.</returns>
+/// <summary>
+/// The Application Entry Point
+/// </summary>
+/// <param name="hInstance">is something called a "handle to an instance" or "handle to a module". The operating system uses this value to identify the executable (EXE) when it is loaded in memory. The instance handle is needed for certain Windows functions�for example, to load icons or bitmaps.</param>
+/// <param name="hPrevInstance">has no meaning. It was used in 16-bit Windows, but is now always zero.</param>
+/// <param name="pCmdLine">contains the command-line arguments as a Unicode string.</param>
+/// <param name="nCmdShow">is a flag that says whether the main application window will be minimized, maximized, or shown normally.</param>
+/// <returns>The return value is not used by the operating system, but you can use the return value to convey a status code to some other program that you write.</returns>
 int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ PTSTR pCmdLine, _In_ int nCmdShow);
 
 // Prototype of OniLauncher.cpp windows related functions
@@ -140,14 +140,14 @@ private:
     bool        configLoaded = false;
     LPDIRECT3D9 d3d = NULL;
     D3DDISPLAYMODE **d3dDisplayModes = NULL;
-    
+
     UINT        selectedMonitor = 0U;
     UINT        selectedMode = 0U;
     //TODO replace selectedResolution and selectedRefreshRate by a single d3dDisplayMode
     RESOLUTION  selectedResolution = { 0U, 0U };
     UINT        selectedRefreshRate = 0U;
     DISPLAYMODE selectedDisplayMode = DISPLAYMODE::NONE;
-    TCHAR       selectedLanguage[MAX_LANG_LENGTH] = {0};
+    TCHAR       selectedLanguage[MAX_LANG_LENGTH] = { 0 };
     bool        debugEnabled = false;
 
     HWND        hWnd = NULL;
@@ -173,7 +173,7 @@ private:
     bool        initMonitorDisplayModes();
 
     HWND        createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w);
-    bool        prefillSettingsFromConfig();
+    bool        prefillSettings();
 
     bool        setCurrentHKEY(HKEY hKey);
     bool        resetHKEY();
@@ -195,7 +195,7 @@ public:
 
     VOID        resetResolution();
     VOID        resetRefreshRate();
-                
+
     bool        fillMonitorComboBox();
     bool        fillResolutionComboBox();
     bool        fillRefreshRateComboBox();
@@ -208,7 +208,7 @@ public:
     bool        fetchSelectedDisplayMode();
     bool        fetchSelectedDebugMode();
     bool        fetchSelectedLanguage();
-        
+
     bool        checkSettings();
     bool        save();
 

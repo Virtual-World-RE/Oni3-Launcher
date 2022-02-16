@@ -9,7 +9,7 @@
 
 #include "OniLauncher.hpp"
 
-// Global variables:
+ // Global variables:
 HINSTANCE hInst;                                // Global instance.
 TCHAR szTitle[MAX_LOADSTRING];                  // Windows main title.
 TCHAR szWindowClass[MAX_LOADSTRING];            // Main class name.
@@ -35,10 +35,8 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
     hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDS_ONILAUNCHER));
 
-    while (GetMessage(&msg, NULL, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
@@ -46,7 +44,7 @@ int APIENTRY WINMAIN(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     DestroyAcceleratorTable(hAccelTable);
     UnregisterClass(szWindowClass, hInstance);
 
-    return (int) msg.wParam;
+    return (int)msg.wParam;
 }
 
 bool MainWindowRegisterClass(HINSTANCE hInstance)
@@ -66,8 +64,7 @@ bool MainWindowRegisterClass(HINSTANCE hInstance)
     wcex.lpszClassName = szWindowClass;
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    if (!RegisterClassEx(&wcex))
-    {
+    if (!RegisterClassEx(&wcex)) {
         showWinApiErrorMB(NULL, TEXT("Class Registration Error"));
         return false;
     }
@@ -113,7 +110,7 @@ LRESULT wndProcCreate(HWND hWnd)
 {
     oniLauncher.init(hWnd);
 
-    EnumChildWindows(hWnd, (WNDENUMPROC)SetFont, (LPARAM)GetStockObject(DEFAULT_GUI_FONT));   
+    EnumChildWindows(hWnd, (WNDENUMPROC)SetFont, (LPARAM)GetStockObject(DEFAULT_GUI_FONT));
 
     return 0;
 }
@@ -443,9 +440,9 @@ bool OniLauncher::jsonConfigExists()
 {
     TCHAR szPath[MAX_PATH];
 
-    if (!SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath))) 
+    if (!SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath)))
         return false;
-    
+
     PathCchAppend(szPath, MAX_PATH, TEXT("OniLauncher"));
     PathCchAppend(szPath, MAX_PATH, TEXT("config.json"));
     if (PathFileExists(szPath))
@@ -471,8 +468,6 @@ UINT OniLauncher::getMonitorDisplayMode(UINT width, UINT height)
 
 VOID OniLauncher::init(HWND hWnd)
 {
-    DWORD vlength = MAX_LANG_LENGTH;
-    TCHAR reg[MAX_PATH] = { 0 };
     TCHAR loadedString[MAX_LOADSTRING];
 
     debugModeButton = NULL;
@@ -492,16 +487,13 @@ VOID OniLauncher::init(HWND hWnd)
     CreateWindow(WC_BUTTON, loadedString, DEFAULT_STYLE, 5, 355, 240, 40, hWnd, (HMENU)ID_PLAY, hInst, NULL);
 
     fillLanguageComboBox();
-    getRegKeyValue(TEXT("Language"), reg, &vlength);
-    ComboBox_SelectString(languageComboBox, 0, reg);
-
     fillDisplayModeComboBox();
     fillMonitorComboBox();
 
     ComboBox_SetCurSel(monitorComboBox, 0);
-    
+
     fillResolutionComboBox();
-    prefillSettingsFromConfig();
+    prefillSettings();
 }
 
 HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, UINT x, UINT y, UINT w)
@@ -524,13 +516,23 @@ HWND OniLauncher::createComboBoxWithLabel(HWND hWnd, UINT textUID, UINT menuId, 
     return hCtl;
 }
 
-bool OniLauncher::prefillSettingsFromConfig()
+bool OniLauncher::prefillSettings()
 {
+    DWORD vlength = MAX_LANG_LENGTH;
+    TCHAR reg[MAX_PATH] = { 0 };
+
+    if (getRegKeyValue(TEXT("Language"), reg, &vlength) == true) {
+        if (ComboBox_SelectString(languageComboBox, 0, reg) == CB_ERR)
+            return false;
+    } else {
+        if (ComboBox_SelectString(languageComboBox, 0, TEXT("Japanese")) == CB_ERR)
+            return false;
+    }
+
+
     if (!configLoaded)
         return false;
 
-    if (ComboBox_SetCurSel(displayModeComboBox, ComboBox_SelectItemData(displayModeComboBox, 0, (LPARAM)selectedDisplayMode)) == CB_ERR)
-        return false;
     if (ComboBox_SetCurSel(monitorComboBox, ComboBox_SelectItemData(monitorComboBox, 0, (LPARAM)selectedMonitor)) == CB_ERR)
         return false;
     fillResolutionComboBox();
@@ -539,8 +541,11 @@ bool OniLauncher::prefillSettingsFromConfig()
     fillRefreshRateComboBox();
     if (ComboBox_SetCurSel(refreshRateComboBox, ComboBox_SelectItemData(refreshRateComboBox, 0, (LPARAM)selectedRefreshRate)) == CB_ERR)
         return false;
+    if (ComboBox_SetCurSel(displayModeComboBox, ComboBox_SelectItemData(displayModeComboBox, 0, (LPARAM)selectedDisplayMode)) == CB_ERR)
+        return false;
     if (debugEnabled)
         Button_SetCheck(debugModeButton, BST_CHECKED);
+
     return true;
 }
 
@@ -578,7 +583,7 @@ bool OniLauncher::fillMonitorComboBox()
         if (comboBoxIndex == CB_ERR || ComboBox_SetItemData(monitorComboBox, comboBoxIndex, (LPARAM)i) == CB_ERR)
             return false;
     }
-    
+
     ComboBox_Enable(monitorComboBox, TRUE);
     return true;
 }
@@ -825,7 +830,7 @@ bool OniLauncher::getRegKeyValue(LPCTSTR lpValue, LPTSTR lpData, LPDWORD lpcbDat
         return false;
     if (currentHKey && lpValue && lpData)
         result = (RegGetValue(currentHKey, NULL, lpValue, RRF_RT_REG_SZ, NULL, lpData, lpcbData) == ERROR_SUCCESS);
-    
+
     setCurrentHKEY(0);
 
     return result;
@@ -898,7 +903,7 @@ bool OniLauncher::save()
     saveFile = CreateFile(szPath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (saveFile == INVALID_HANDLE_VALUE)
         return false;
-    
+
     strcpy_s(settingsDump, 2047, settings.dump(4).c_str());
     WriteFile(saveFile, settingsDump, strlen(settingsDump), &dwBytesWritten, NULL);
 
