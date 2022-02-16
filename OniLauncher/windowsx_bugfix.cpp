@@ -1,7 +1,7 @@
 #include "windowsx_bugfix.hpp"
 
 /// <summary>
-/// 
+///
 /// </summary>
 /// <param name="hwndCtl">The combobox handler.</param>
 /// <param name="indexStart">Index from where to start search.</param>

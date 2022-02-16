@@ -46,9 +46,8 @@
 #define IDSE_NO_DISPLAY_MODE_SELECTED_TITLE  704
 #define IDSE_NO_DISPLAY_MODE_SELECTED_MSG    705
 
-
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1

@@ -529,7 +529,6 @@ bool OniLauncher::prefillSettings()
             return false;
     }
 
-
     if (!configLoaded)
         return false;
 

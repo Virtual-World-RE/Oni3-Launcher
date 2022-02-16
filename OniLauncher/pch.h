@@ -37,7 +37,6 @@
 #include <dxgi.h>
 #include <d3d9helper.h>
 
-
 // reference additional headers your program requires here
 #include <unknwn.h>
 #include <winrt/base.h>
