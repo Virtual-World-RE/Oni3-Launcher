@@ -126,7 +126,7 @@ LRESULT             wndProcCommandScreenSettings(HWND hWnd, UINT wmId, UINT iCod
 /// Sub-function for about dialog window About()
 INT_PTR             aboutProcCommand(HWND hDlg, UINT message, WPARAM wParam);
 
-int d3dDisplayModeCmp(const void *firstD3dDisplayMode, const void *secondD3dDisplayMode);
+static int __cdecl SortModesCallback(const void *arg1, const void *arg2);
 
 enum class DISPLAYMODE : UINT
 {

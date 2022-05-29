@@ -24,6 +24,7 @@
     <ProjectGuid>{09dfa4e2-2ef8-43aa-8176-1117fa85cc1b}</ProjectGuid>
     <RootNamespace>OniLauncher</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>OniLauncher_Legacy</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

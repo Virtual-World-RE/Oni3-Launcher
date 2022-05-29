@@ -5,6 +5,58 @@ CreateWindowExWType OniHook::TrueCreateWindowExW = nullptr;
 Direct3DCreate9Type OniHook::TrueDirect3DCreate9 = nullptr;
 OniHook *OniHook::instance = nullptr;
 
+bool OniHook::jsonLoadConfig()
+{
+    DWORD dwByteReaded = 0;
+    CHAR settingsDump[2048] = { 0 };
+    TCHAR szPath[MAX_PATH];
+    HANDLE saveFile;
+    json settings;
+
+    if (!SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath)))
+        return false;
+
+    PathCchAppend(szPath, MAX_PATH, TEXT("OniLauncher"));
+    PathCchAppend(szPath, MAX_PATH, TEXT("config.json"));
+
+    saveFile = CreateFile(szPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (saveFile == INVALID_HANDLE_VALUE)
+        return false;
+
+    if (!ReadFile(saveFile, settingsDump, 2047, &dwByteReaded, NULL))
+        return false;
+
+    CloseHandle(saveFile);
+    try {
+        settings = json::parse(settingsDump);
+    } catch (json::parse_error &e) {
+        CHAR buffer[200];
+        sprintf_s(buffer, 200, "nlohmann JSON failed to parse:\n%s", e.what());
+        MessageBoxA(NULL, buffer, "Invalid JSON file", MB_OK | MB_ICONERROR);
+    }
+
+    selectedMonitor = settings.value<UINT>("monitor", -1);
+    selectedResolution.height = settings["resolution"].value<UINT>("height", 0);
+    selectedResolution.width = settings["resolution"].value<UINT>("width", 0);
+    selectedRefreshRate = settings.value<UINT>("refreshRate", 0);
+    if (settings.value<bool>("borderless", false) == true)
+        selectedDisplayMode = DISPLAYMODE::BORDERLESS;
+    if (settings.value<bool>("fullscreen", false) == true)
+        selectedDisplayMode = DISPLAYMODE::FULLSCREEN;
+    if (settings.value<bool>("borderless", false) == false && settings.value<bool>("fullscreen", false) == false)
+        selectedDisplayMode = DISPLAYMODE::WINDOWED;
+    debugEnabled = settings.value<bool>("debugEnabled", false);
+
+    return true;
+}
+
+OniHook::OniHook()
+{
+    if (jsonLoadConfig())
+        configLoaded = true;
+}
+
 HWND WINAPI OniHook::MyCreateWindowExW(
     _In_     DWORD     dwExStyle,
     _In_opt_ LPCWSTR   lpClassName,
@@ -32,18 +84,21 @@ HWND WINAPI OniHook::MyCreateWindowExW(
         TraceParam("Height", nHeight);
 
         if (!wcscmp(lpWindowName, L"oni3")) {
-            RECT rect;
+            RECT rect = { 0 };
             TraceMsg("Onimusha 3 window found");
 
-            // BORDERLESS_STYLE: WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX
+            // AERO__BORDERLESS: WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX
+            // BASIC_BORDERLESS: WS_POPUP | WS_THICKFRAME |              WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX
+            // FULLSCREEN
 
             X = CW_USEDEFAULT;
             Y = CW_USEDEFAULT;
 
-            SecureZeroMemory(&rect, sizeof(RECT));
-            rect.bottom = 1080;
-            rect.right = 1920;
-            AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
+            if (configLoaded) {
+                rect.bottom = selectedResolution.height;
+                rect.right = selectedResolution.width;
+                AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
+            }
 
             // TODO: Read from config
             nWidth = rect.right - rect.left;

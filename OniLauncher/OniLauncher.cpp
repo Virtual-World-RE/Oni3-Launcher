@@ -283,37 +283,27 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-int d3dDisplayModeCmp(const void *firstD3dDisplayMode, const void *secondD3dDisplayMode)
+static int __cdecl SortModesCallback(const void *arg1, const void *arg2)
 {
-    D3DDISPLAYMODE firstD3dDisplayModeT = *(const D3DDISPLAYMODE *)firstD3dDisplayMode;
-    D3DDISPLAYMODE secondD3dDisplayModeT = *(const D3DDISPLAYMODE *)secondD3dDisplayMode;
+    D3DDISPLAYMODE *pdm1 = (D3DDISPLAYMODE *)arg1;
+    D3DDISPLAYMODE *pdm2 = (D3DDISPLAYMODE *)arg2;
 
-    INT64 wDiff = (INT64)firstD3dDisplayModeT.Width - (INT64)secondD3dDisplayModeT.Width;
-
-    if (wDiff == 0) {
-        INT64 hDiff = (INT64)firstD3dDisplayModeT.Height - (INT64)secondD3dDisplayModeT.Height;
-
-        if (hDiff == 0) {
-            INT64 rDiff = (INT64)firstD3dDisplayModeT.RefreshRate - (INT64)secondD3dDisplayModeT.RefreshRate;
-
-            if (rDiff > 0)
-                return 4;
-            if (rDiff < 0)
-                return -4;
-            return 0;
-        }
-
-        if (hDiff > 0)
-            return 2;
-        if (hDiff < 0)
-            return -2;
-    }
-
-    if (wDiff > 0)
+    if (pdm1->Width > pdm2->Width)
         return 1;
-    if (wDiff < 0)
+    if (pdm1->Width < pdm2->Width)
         return -1;
-
+    if (pdm1->Height > pdm2->Height)
+        return 1;
+    if (pdm1->Height < pdm2->Height)
+        return -1;
+    if (pdm1->Format > pdm2->Format)
+        return 1;
+    if (pdm1->Format < pdm2->Format)
+        return -1;
+    if (pdm1->RefreshRate > pdm2->RefreshRate)
+        return 1;
+    if (pdm1->RefreshRate < pdm2->RefreshRate)
+        return -1;
     return 0;
 }
 
@@ -377,7 +367,8 @@ bool OniLauncher::initMonitorDisplayModes()
             d3d->EnumAdapterModes(i, D3DFMT_MODE, j, &d3dDisplayModes[i][j]);
         }
 
-        qsort(d3dDisplayModes[i], modes, sizeof(D3DDISPLAYMODE), d3dDisplayModeCmp);
+        //qsort(d3dDisplayModes[i], modes, sizeof(D3DDISPLAYMODE), d3dDisplayModeCmp);
+        qsort(d3dDisplayModes[i], modes, sizeof(D3DDISPLAYMODE), SortModesCallback);
     }
 
     return true;
