@@ -4,7 +4,7 @@
 [![SemVer: 2.0.0](https://img.shields.io/badge/SemVer-2.0.0-3F4551.svg)](https://github.com/Virtual-World-RE/O3RE/blob/master/SEMVER.md)
 [![Keep a Changelog: 1.1.0](https://img.shields.io/badge/Keep%20a%20changelog-1.1.0-f25d30.svg)](https://github.com/Virtual-World-RE/O3RE/blob/master/CHANGELOG.md)
 
-# Onimusha 3: RE
+# Patch and patcher for Onimusha 3
 Open Source Fixes for Onimusha 3: Demon Siege.
 > May become a full reverse of the game one day ?
 
